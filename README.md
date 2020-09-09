@@ -201,10 +201,7 @@ Which files in this repo are the logs for your build?   This should include logs
 -------------------------------------------------------------------------------
 Patched repostiory: https://github.com/zeronsoftn/shim/tree/zeron/15+1552672080.a4a1fbe-1
 
-* review-request/build-all-stdout.txt
-* review-request/buildlog-x86_64.txt
-* review-request/buildlog-i386.txt
-* review-request/buildlog-arm64.txt
+* [review-request/build-log.txt](review-request/build-log.txt)
 
 -------------------------------------------------------------------------------
 Add any additional information you think we may need to validate this shim
