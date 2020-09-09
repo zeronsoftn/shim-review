@@ -189,9 +189,9 @@ What OS and toolchain must we use to reproduce this build?  Include where to fin
 ```bash
 ## Install git docker
 
-# git clone -b "zeron/15+1552672080.a4a1fbe-1" https://github.com/zeronsoftn/shim-builder.git
-# cd shim-builder
-# ./build-all.sh
+$ git clone https://github.com/zeronsoftn/shim-builder.git
+$ cd shim-builder
+$ make all
 ```
 
 
