@@ -184,6 +184,48 @@ What OS and toolchain must we use to reproduce this build?  Include where to fin
 
 
 
+-------------------------------------------------------------------------------
+If bootloader, shim loading is, grub2: is CVE-2020-10713 fixed ?
+-------------------------------------------------------------------------------
+Yes.
+
+We use "2.04-1ubuntu26.3".
+
+https://people.canonical.com/~ubuntu-security/cve/2020/CVE-2020-10713
+
+-------------------------------------------------------------------------------
+If bootloader, shim loading is, grub2, and previous shims were trusting affected
+by CVE-2020-10713 grub2:
+* were old shims hashes provided to Microsoft for verification
+  and to be added to future DBX update ?
+* Does your new chain of trust disallow booting old, affected by CVE-2020-10713,
+  grub2 builds ?
+-------------------------------------------------------------------------------
+This is our first submission.
+
+-------------------------------------------------------------------------------
+If your boot chain of trust includes linux kernel, is
+"efi: Restrict efivar_ssdt_load when the kernel is locked down"
+upstream commit 1957a85b0032a81e6482ca4aab883643b8dae06e applied ?
+Is "ACPI: configfs: Disallow loading ACPI tables when locked down"
+upstream commit 75b0cea7bf307f362057cc778efe89af4c615354 applied ?
+-------------------------------------------------------------------------------
+The latest kernel version for Alpine Linux is 5.4.43.
+This has no corresponding patch applied.
+But we boot all linux images from squashfs and verify the images with pgp in grub.
+This is why third-party code cannot be executed.
+We will apply when a new kernel is released from Alpine.
+
+
+-------------------------------------------------------------------------------
+If you use vendor_db functionality of providing multiple certificates and/or
+hashes please briefly describe your certificate setup. If there are whitelisted hashes
+please provide exact binaries for which hashes are created via file sharing service,
+available in public with anonymous access for verification
+-------------------------------------------------------------------------------
+No Use
+
+
 **To build:**
 
 ```bash
