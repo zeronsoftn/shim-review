@@ -153,6 +153,13 @@ What patches are being applied and why:
 None
 ```
 
+But There are some patches only for the build part.
+
+https://github.com/zeronsoftn/shim-builder/tree/ba6032cf888c9ca788901718892246ac4a2f52a0/docker/patches
+
+- 0001-Make-building-outside-of-the-top-directory-work.patch : https://github.com/rhboot/shim/commit/8578b75f9c18fd267c8a0746192ab3f051561df2
+- 0002-Make-building-outside-of-this-directory-work.patch : https://github.com/rhboot/gnu-efi/commit/65ecce23f005c4d611f48996112d4592164594cf
+
 -------------------------------------------------------------------------------
 If bootloader, shim loading is, GRUB2: is CVE-2020-14372, CVE-2020-25632,
  CVE-2020-25647, CVE-2020-27749, CVE-2020-27779, CVE-2021-20225, CVE-2021-20233,
