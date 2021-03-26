@@ -24,25 +24,260 @@ Step 9/21 : ARG SHIM_ARCHIVE_SHA256=
  ---> Using cache
  ---> 5d84577be6fc
 Step 10/21 : COPY [ "vendor_cert.der", "sbat.csv", "${SHIM_ARCHIVE_FILE}", "/tmp/" ]
- ---> Using cache
- ---> 64085706122e
+ ---> a41227f09085
 Step 11/21 : COPY [ "patches", "/tmp/patches" ]
- ---> Using cache
- ---> 29e36b34177f
+ ---> 0e9bd109cdc9
 Step 12/21 : RUN cd /tmp && echo "${SHIM_ARCHIVE_SHA256} ${SHIM_ARCHIVE_FILE}" | sha256sum -c
- ---> Using cache
- ---> 814997fa91bc
+ ---> Running in 27c75a5ea723
+shim-15.3.tar.bz2: OK
+Removing intermediate container 27c75a5ea723
+ ---> be0ca718a8be
 Step 13/21 : WORKDIR /work
- ---> Using cache
- ---> f85e42ae7a8e
+ ---> Running in 2775e53beeff
+Removing intermediate container 2775e53beeff
+ ---> c1cd72f44d8a
 Step 14/21 : RUN mkdir -p /work/output &&     dpkg -l | tee /work/output/builder-packages.txt
- ---> Using cache
- ---> ecc44ee923ca
+ ---> Running in 914192699eeb
+Desired=Unknown/Install/Remove/Purge/Hold
+| Status=Not/Inst/Conf-files/Unpacked/halF-conf/Half-inst/trig-aWait/Trig-pend
+|/ Err?=(none)/Reinst-required (Status,Err: uppercase=bad)
+||/ Name                               Version                           Architecture Description
++++-==================================-=================================-============-===============================================================================
+ii  adduser                            3.118ubuntu2                      all          add and remove users and groups
+ii  apt                                2.0.2ubuntu0.1                    amd64        commandline package manager
+ii  base-files                         11ubuntu5.2                       amd64        Debian base system miscellaneous files
+ii  base-passwd                        3.5.47                            amd64        Debian base system master password and group files
+ii  bash                               5.0-6ubuntu1.1                    amd64        GNU Bourne Again SHell
+ii  binutils                           2.34-6ubuntu1.1                   amd64        GNU assembler, linker and binary utilities
+ii  binutils-aarch64-linux-gnu         2.34-6ubuntu1.1                   amd64        GNU binary utilities, for aarch64-linux-gnu target
+ii  binutils-common:amd64              2.34-6ubuntu1.1                   amd64        Common files for the GNU assembler, linker and binary utilities
+ii  binutils-x86-64-linux-gnu          2.34-6ubuntu1.1                   amd64        GNU binary utilities, for x86-64-linux-gnu target
+ii  bsdutils                           1:2.34-0.1ubuntu9.1               amd64        basic utilities from 4.4BSD-Lite
+ii  bzip2                              1.0.8-2                           amd64        high-quality block-sorting file compressor - utilities
+ii  ca-certificates                    20210119~20.04.1                  all          Common CA certificates
+ii  coolkey                            1.1.0-15ubuntu1                   amd64        Smart Card PKCS #11 cryptographic module
+ii  coreutils                          8.30-3ubuntu2                     amd64        GNU core utilities
+ii  cpp                                4:9.3.0-1ubuntu2                  amd64        GNU C preprocessor (cpp)
+ii  cpp-9                              9.3.0-17ubuntu1~20.04             amd64        GNU C preprocessor
+ii  cpp-9-aarch64-linux-gnu            9.3.0-17ubuntu1~20.04cross2       amd64        GNU C preprocessor
+ii  cpp-aarch64-linux-gnu              4:9.3.0-1ubuntu2                  amd64        GNU C preprocessor (cpp) for the arm64 architecture
+ii  dash                               0.5.10.2-6                        amd64        POSIX-compliant shell
+ii  debconf                            1.5.73                            all          Debian configuration management system
+ii  debianutils                        4.9.1                             amd64        Miscellaneous utilities specific to Debian
+ii  diffutils                          1:3.7-3                           amd64        File comparison utilities
+ii  dpkg                               1.19.7ubuntu3                     amd64        Debian package management system
+ii  e2fsprogs                          1.45.5-2ubuntu1                   amd64        ext2/ext3/ext4 file system utilities
+ii  fdisk                              2.34-0.1ubuntu9.1                 amd64        collection of partitioning utilities
+ii  findutils                          4.7.0-1ubuntu1                    amd64        utilities for finding files--find, xargs
+ii  gcc                                4:9.3.0-1ubuntu2                  amd64        GNU C compiler
+ii  gcc-10-base:amd64                  10.2.0-5ubuntu1~20.04             amd64        GCC, the GNU Compiler Collection (base package)
+ii  gcc-10-cross-base                  10.2.0-5ubuntu1~20.04cross1       all          GCC, the GNU Compiler Collection (library base package)
+ii  gcc-9                              9.3.0-17ubuntu1~20.04             amd64        GNU C compiler
+ii  gcc-9-aarch64-linux-gnu            9.3.0-17ubuntu1~20.04cross2       amd64        GNU C compiler (cross compiler for arm64 architecture)
+ii  gcc-9-aarch64-linux-gnu-base:amd64 9.3.0-17ubuntu1~20.04cross2       amd64        GCC, the GNU Compiler Collection (base package)
+ii  gcc-9-base:amd64                   9.3.0-17ubuntu1~20.04             amd64        GCC, the GNU Compiler Collection (base package)
+ii  gcc-9-cross-base                   9.3.0-17ubuntu1~20.04cross2       all          GCC, the GNU Compiler Collection (library base package)
+ii  gcc-aarch64-linux-gnu              4:9.3.0-1ubuntu2                  amd64        GNU C compiler for the arm64 architecture
+ii  git                                1:2.25.1-1ubuntu3.1               amd64        fast, scalable, distributed revision control system
+ii  git-man                            1:2.25.1-1ubuntu3.1               all          fast, scalable, distributed revision control system (manual pages)
+ii  gpgv                               2.2.19-3ubuntu2                   amd64        GNU privacy guard - signature verification tool
+ii  grep                               3.4-1                             amd64        GNU grep, egrep and fgrep
+ii  gzip                               1.10-0ubuntu4                     amd64        GNU compression utilities
+ii  hostname                           3.23                              amd64        utility to set/show the host name or domain name
+ii  init-system-helpers                1.57                              all          helper tools for all init systems
+ii  krb5-locales                       1.17-6ubuntu4.1                   all          internationalization support for MIT Kerberos
+ii  less                               551-1ubuntu0.1                    amd64        pager program similar to more
+ii  libacl1:amd64                      2.2.53-6                          amd64        access control list - shared library
+ii  libapt-pkg6.0:amd64                2.0.2ubuntu0.1                    amd64        package management runtime library
+ii  libasan5:amd64                     9.3.0-17ubuntu1~20.04             amd64        AddressSanitizer -- a fast memory error detector
+ii  libasan5-arm64-cross               9.3.0-17ubuntu1~20.04cross2       all          AddressSanitizer -- a fast memory error detector
+ii  libasn1-8-heimdal:amd64            7.7.0+dfsg-1ubuntu1               amd64        Heimdal Kerberos - ASN.1 library
+ii  libatomic1:amd64                   10.2.0-5ubuntu1~20.04             amd64        support library providing __atomic built-in functions
+ii  libatomic1-arm64-cross             10.2.0-5ubuntu1~20.04cross1       all          support library providing __atomic built-in functions
+ii  libattr1:amd64                     1:2.4.48-5                        amd64        extended attribute handling - shared library
+ii  libaudit-common                    1:2.8.5-2ubuntu6                  all          Dynamic library for security auditing - common files
+ii  libaudit1:amd64                    1:2.8.5-2ubuntu6                  amd64        Dynamic library for security auditing
+ii  libbinutils:amd64                  2.34-6ubuntu1.1                   amd64        GNU binary utilities (private shared library)
+ii  libblkid1:amd64                    2.34-0.1ubuntu9.1                 amd64        block device ID library
+ii  libbrotli1:amd64                   1.0.7-6ubuntu0.1                  amd64        library implementing brotli encoder and decoder (shared libraries)
+ii  libbsd0:amd64                      0.10.0-1                          amd64        utility functions from BSD systems - shared library
+ii  libbz2-1.0:amd64                   1.0.8-2                           amd64        high-quality block-sorting file compressor library - runtime
+ii  libc-bin                           2.31-0ubuntu9.1                   amd64        GNU C Library: Binaries
+ii  libc-dev-bin                       2.31-0ubuntu9.2                   amd64        GNU C Library: Development binaries
+ii  libc6:amd64                        2.31-0ubuntu9.2                   amd64        GNU C Library: Shared libraries
+ii  libc6-arm64-cross                  2.31-0ubuntu9.2cross1             all          GNU C Library: Shared libraries (for cross-compiling)
+ii  libc6-dev:amd64                    2.31-0ubuntu9.2                   amd64        GNU C Library: Development Libraries and Header Files
+ii  libc6-dev-arm64-cross              2.31-0ubuntu9.2cross1             all          GNU C Library: Development Libraries and Header Files (for cross-compiling)
+ii  libcap-ng0:amd64                   0.7.9-2.1build1                   amd64        An alternate POSIX capabilities library
+ii  libcbor0.6:amd64                   0.6.0-0ubuntu1                    amd64        library for parsing and generating CBOR (RFC 7049)
+ii  libcc1-0:amd64                     10.2.0-5ubuntu1~20.04             amd64        GCC cc1 plugin for GDB
+ii  libccid                            1.4.31-1                          amd64        PC/SC driver for USB CCID smart card readers
+ii  libckyapplet1                      1.1.0-15ubuntu1                   amd64        Smart Card Coolkey applet
+ii  libcom-err2:amd64                  1.45.5-2ubuntu1                   amd64        common error description library
+ii  libcrypt-dev:amd64                 1:4.4.10-10ubuntu4                amd64        libcrypt development files
+ii  libcrypt1:amd64                    1:4.4.10-10ubuntu4                amd64        libcrypt shared library
+ii  libctf-nobfd0:amd64                2.34-6ubuntu1.1                   amd64        Compact C Type Format library (runtime, no BFD dependency)
+ii  libctf0:amd64                      2.34-6ubuntu1.1                   amd64        Compact C Type Format library (runtime, BFD dependency)
+ii  libcurl3-gnutls:amd64              7.68.0-1ubuntu2.4                 amd64        easy-to-use client-side URL transfer library (GnuTLS flavour)
+ii  libdb5.3:amd64                     5.3.28+dfsg1-0.6ubuntu2           amd64        Berkeley v5.3 Database Libraries [runtime]
+ii  libdebconfclient0:amd64            0.251ubuntu1                      amd64        Debian Configuration Management System (C-implementation library)
+ii  libedit2:amd64                     3.1-20191231-1                    amd64        BSD editline and history libraries
+ii  libefivar1:amd64                   37-2ubuntu2.2                     amd64        Library to manage UEFI variables
+ii  libelf-dev:amd64                   0.176-1.1build1                   amd64        libelf1 development libraries and header files
+ii  libelf1:amd64                      0.176-1.1build1                   amd64        library to read and write ELF files
+ii  liberror-perl                      0.17029-1                         all          Perl module for error/exception handling in an OO-ish way
+ii  libexpat1:amd64                    2.2.9-1build1                     amd64        XML parsing C library - runtime library
+ii  libext2fs2:amd64                   1.45.5-2ubuntu1                   amd64        ext2/ext3/ext4 file system libraries
+ii  libfdisk1:amd64                    2.34-0.1ubuntu9.1                 amd64        fdisk partitioning library
+ii  libffi7:amd64                      3.3-4                             amd64        Foreign Function Interface library runtime
+ii  libfido2-1:amd64                   1.3.1-1ubuntu2                    amd64        library for generating and verifying FIDO 2.0 objects
+ii  libgcc-9-dev:amd64                 9.3.0-17ubuntu1~20.04             amd64        GCC support library (development files)
+ii  libgcc-9-dev-arm64-cross           9.3.0-17ubuntu1~20.04cross2       all          GCC support library (development files)
+ii  libgcc-s1:amd64                    10.2.0-5ubuntu1~20.04             amd64        GCC support library
+ii  libgcc-s1-arm64-cross              10.2.0-5ubuntu1~20.04cross1       all          GCC support library (arm64)
+ii  libgcrypt20:amd64                  1.8.5-5ubuntu1                    amd64        LGPL Crypto library - runtime library
+ii  libgdbm-compat4:amd64              1.18.1-5                          amd64        GNU dbm database routines (legacy support runtime version) 
+ii  libgdbm6:amd64                     1.18.1-5                          amd64        GNU dbm database routines (runtime version) 
+ii  libglib2.0-0:amd64                 2.64.6-1~ubuntu20.04.3            amd64        GLib library of C routines
+ii  libglib2.0-data                    2.64.6-1~ubuntu20.04.3            all          Common files for GLib library
+ii  libgmp10:amd64                     2:6.2.0+dfsg-4                    amd64        Multiprecision arithmetic library
+ii  libgnutls30:amd64                  3.6.13-2ubuntu1.3                 amd64        GNU TLS library - main runtime library
+ii  libgomp1:amd64                     10.2.0-5ubuntu1~20.04             amd64        GCC OpenMP (GOMP) support library
+ii  libgomp1-arm64-cross               10.2.0-5ubuntu1~20.04cross1       all          GCC OpenMP (GOMP) support library
+ii  libgpg-error0:amd64                1.37-1                            amd64        GnuPG development runtime library
+ii  libgssapi-krb5-2:amd64             1.17-6ubuntu4.1                   amd64        MIT Kerberos runtime libraries - krb5 GSS-API Mechanism
+ii  libgssapi3-heimdal:amd64           7.7.0+dfsg-1ubuntu1               amd64        Heimdal Kerberos - GSSAPI support library
+ii  libhcrypto4-heimdal:amd64          7.7.0+dfsg-1ubuntu1               amd64        Heimdal Kerberos - crypto library
+ii  libheimbase1-heimdal:amd64         7.7.0+dfsg-1ubuntu1               amd64        Heimdal Kerberos - Base library
+ii  libheimntlm0-heimdal:amd64         7.7.0+dfsg-1ubuntu1               amd64        Heimdal Kerberos - NTLM support library
+ii  libhogweed5:amd64                  3.5.1+really3.5.1-2               amd64        low level cryptographic library (public-key cryptos)
+ii  libhx509-5-heimdal:amd64           7.7.0+dfsg-1ubuntu1               amd64        Heimdal Kerberos - X509 support library
+ii  libicu66:amd64                     66.1-2ubuntu2                     amd64        International Components for Unicode
+ii  libidn2-0:amd64                    2.2.0-2                           amd64        Internationalized domain names (IDNA2008/TR46) library
+ii  libisl22:amd64                     0.22.1-1                          amd64        manipulating sets and relations of integer points bounded by linear constraints
+ii  libitm1:amd64                      10.2.0-5ubuntu1~20.04             amd64        GNU Transactional Memory Library
+ii  libitm1-arm64-cross                10.2.0-5ubuntu1~20.04cross1       all          GNU Transactional Memory Library
+ii  libk5crypto3:amd64                 1.17-6ubuntu4.1                   amd64        MIT Kerberos runtime libraries - Crypto Library
+ii  libkeyutils1:amd64                 1.6-6ubuntu1                      amd64        Linux Key Management Utilities (library)
+ii  libkrb5-26-heimdal:amd64           7.7.0+dfsg-1ubuntu1               amd64        Heimdal Kerberos - libraries
+ii  libkrb5-3:amd64                    1.17-6ubuntu4.1                   amd64        MIT Kerberos runtime libraries
+ii  libkrb5support0:amd64              1.17-6ubuntu4.1                   amd64        MIT Kerberos runtime libraries - Support library
+ii  libldap-2.4-2:amd64                2.4.49+dfsg-2ubuntu1.7            amd64        OpenLDAP libraries
+ii  libldap-common                     2.4.49+dfsg-2ubuntu1.7            all          OpenLDAP common files for libraries
+ii  liblsan0:amd64                     10.2.0-5ubuntu1~20.04             amd64        LeakSanitizer -- a memory leak detector (runtime)
+ii  liblsan0-arm64-cross               10.2.0-5ubuntu1~20.04cross1       all          LeakSanitizer -- a memory leak detector (runtime)
+ii  liblz4-1:amd64                     1.9.2-2                           amd64        Fast LZ compression algorithm library - runtime
+ii  liblzma5:amd64                     5.2.4-1ubuntu1                    amd64        XZ-format compression library
+ii  libmount1:amd64                    2.34-0.1ubuntu9.1                 amd64        device mounting library
+ii  libmpc3:amd64                      1.1.0-1                           amd64        multiple precision complex floating-point library
+ii  libmpfr6:amd64                     4.0.2-1                           amd64        multiple precision floating-point computation
+ii  libncurses6:amd64                  6.2-0ubuntu2                      amd64        shared libraries for terminal handling
+ii  libncursesw6:amd64                 6.2-0ubuntu2                      amd64        shared libraries for terminal handling (wide character support)
+ii  libnettle7:amd64                   3.5.1+really3.5.1-2               amd64        low level cryptographic library (symmetric and one-way cryptos)
+ii  libnghttp2-14:amd64                1.40.0-1build1                    amd64        library implementing HTTP/2 protocol (shared library)
+ii  libnspr4:amd64                     2:4.25-1                          amd64        NetScape Portable Runtime Library
+ii  libnss3:amd64                      2:3.49.1-1ubuntu1.5               amd64        Network Security Service libraries
+ii  libnss3-tools                      2:3.49.1-1ubuntu1.5               amd64        Network Security Service tools
+ii  libp11-kit0:amd64                  0.23.20-1build1                   amd64        library for loading and coordinating access to PKCS#11 modules - runtime
+ii  libpam-modules:amd64               1.3.1-5ubuntu4.1                  amd64        Pluggable Authentication Modules for PAM
+ii  libpam-modules-bin                 1.3.1-5ubuntu4.1                  amd64        Pluggable Authentication Modules for PAM - helper binaries
+ii  libpam-runtime                     1.3.1-5ubuntu4.1                  all          Runtime support for the PAM library
+ii  libpam0g:amd64                     1.3.1-5ubuntu4.1                  amd64        Pluggable Authentication Modules library
+ii  libpcre2-8-0:amd64                 10.34-7                           amd64        New Perl Compatible Regular Expression Library- 8 bit runtime files
+ii  libpcre3:amd64                     2:8.39-12build1                   amd64        Old Perl 5 Compatible Regular Expression Library - runtime files
+ii  libpcsclite1:amd64                 1.8.26-3                          amd64        Middleware to access a smart card using PC/SC (library)
+ii  libperl5.30:amd64                  5.30.0-9ubuntu0.2                 amd64        shared Perl library
+ii  libpopt0:amd64                     1.16-14                           amd64        lib for parsing cmdline parameters
+ii  libprocps8:amd64                   2:3.3.16-1ubuntu2                 amd64        library for accessing process information from /proc
+ii  libpsl5:amd64                      0.21.0-1ubuntu1                   amd64        Library for Public Suffix List (shared libraries)
+ii  libquadmath0:amd64                 10.2.0-5ubuntu1~20.04             amd64        GCC Quad-Precision Math Library
+ii  libreadline8:amd64                 8.0-4                             amd64        GNU readline and history libraries, run-time libraries
+ii  libroken18-heimdal:amd64           7.7.0+dfsg-1ubuntu1               amd64        Heimdal Kerberos - roken support library
+ii  librtmp1:amd64                     2.4+20151223.gitfa8646d.1-2build1 amd64        toolkit for RTMP streams (shared library)
+ii  libsasl2-2:amd64                   2.1.27+dfsg-2                     amd64        Cyrus SASL - authentication abstraction library
+ii  libsasl2-modules:amd64             2.1.27+dfsg-2                     amd64        Cyrus SASL - pluggable authentication modules
+ii  libsasl2-modules-db:amd64          2.1.27+dfsg-2                     amd64        Cyrus SASL - pluggable authentication modules (DB)
+ii  libseccomp2:amd64                  2.4.3-1ubuntu3.20.04.3            amd64        high level interface to Linux seccomp filter
+ii  libselinux1:amd64                  3.0-1build2                       amd64        SELinux runtime shared libraries
+ii  libsemanage-common                 3.0-1build2                       all          Common files for SELinux policy management libraries
+ii  libsemanage1:amd64                 3.0-1build2                       amd64        SELinux policy management library
+ii  libsepol1:amd64                    3.0-1                             amd64        SELinux library for manipulating binary security policies
+ii  libsmartcols1:amd64                2.34-0.1ubuntu9.1                 amd64        smart column output alignment library
+ii  libsqlite3-0:amd64                 3.31.1-4ubuntu0.2                 amd64        SQLite 3 shared library
+ii  libss2:amd64                       1.45.5-2ubuntu1                   amd64        command-line interface parsing library
+ii  libssh-4:amd64                     0.9.3-2ubuntu2.1                  amd64        tiny C SSH library (OpenSSL flavor)
+ii  libssl1.1:amd64                    1.1.1f-1ubuntu2.3                 amd64        Secure Sockets Layer toolkit - shared libraries
+ii  libstdc++6:amd64                   10.2.0-5ubuntu1~20.04             amd64        GNU Standard C++ Library v3
+ii  libstdc++6-arm64-cross             10.2.0-5ubuntu1~20.04cross1       all          GNU Standard C++ Library v3 (arm64)
+ii  libsystemd0:amd64                  245.4-4ubuntu3.2                  amd64        systemd utility library
+ii  libtasn1-6:amd64                   4.16.0-2                          amd64        Manage ASN.1 structures (runtime)
+ii  libtinfo6:amd64                    6.2-0ubuntu2                      amd64        shared low-level terminfo library for terminal handling
+ii  libtsan0:amd64                     10.2.0-5ubuntu1~20.04             amd64        ThreadSanitizer -- a Valgrind-based detector of data races (runtime)
+ii  libtsan0-arm64-cross               10.2.0-5ubuntu1~20.04cross1       all          ThreadSanitizer -- a Valgrind-based detector of data races (runtime)
+ii  libubsan1:amd64                    10.2.0-5ubuntu1~20.04             amd64        UBSan -- undefined behaviour sanitizer (runtime)
+ii  libubsan1-arm64-cross              10.2.0-5ubuntu1~20.04cross1       all          UBSan -- undefined behaviour sanitizer (runtime)
+ii  libudev1:amd64                     245.4-4ubuntu3.2                  amd64        libudev shared library
+ii  libunistring2:amd64                0.9.10-2                          amd64        Unicode string library for C
+ii  libusb-1.0-0:amd64                 2:1.0.23-2build1                  amd64        userspace USB programming library
+ii  libuuid1:amd64                     2.34-0.1ubuntu9.1                 amd64        Universally Unique ID library
+ii  libwind0-heimdal:amd64             7.7.0+dfsg-1ubuntu1               amd64        Heimdal Kerberos - stringprep implementation
+ii  libx11-6:amd64                     2:1.6.9-2ubuntu1.1                amd64        X11 client-side library
+ii  libx11-data                        2:1.6.9-2ubuntu1.1                all          X11 client-side library
+ii  libxau6:amd64                      1:1.0.9-0ubuntu1                  amd64        X11 authorisation library
+ii  libxcb1:amd64                      1.14-2                            amd64        X C Binding
+ii  libxdmcp6:amd64                    1:1.1.3-0ubuntu1                  amd64        X11 Display Manager Control Protocol library
+ii  libxext6:amd64                     2:1.3.4-0ubuntu1                  amd64        X11 miscellaneous extension library
+ii  libxml2:amd64                      2.9.10+dfsg-5                     amd64        GNOME XML library
+ii  libxmuu1:amd64                     2:1.1.3-0ubuntu1                  amd64        X11 miscellaneous micro-utility library
+ii  libzstd1:amd64                     1.4.4+dfsg-3                      amd64        fast lossless compression algorithm
+ii  linux-libc-dev:amd64               5.4.0-70.78                       amd64        Linux Kernel Headers for development
+ii  linux-libc-dev-arm64-cross         5.4.0-59.65cross1                 all          Linux Kernel Headers for development (for cross-compiling)
+ii  login                              1:4.8.1-1ubuntu5.20.04            amd64        system login tools
+ii  logsave                            1.45.5-2ubuntu1                   amd64        save the output of a command in a log file
+ii  lsb-base                           11.1.0ubuntu2                     all          Linux Standard Base init script functionality
+ii  make                               4.2.1-1.2                         amd64        utility for directing compilation
+ii  manpages                           5.05-1                            all          Manual pages about using a GNU/Linux system
+ii  manpages-dev                       5.05-1                            all          Manual pages about using GNU/Linux for development
+ii  mawk                               1.3.4.20200120-2                  amd64        Pattern scanning and text processing language
+ii  mount                              2.34-0.1ubuntu9.1                 amd64        tools for mounting and manipulating filesystems
+ii  ncurses-base                       6.2-0ubuntu2                      all          basic terminal type definitions
+ii  ncurses-bin                        6.2-0ubuntu2                      amd64        terminal-related programs and man pages
+ii  netbase                            6.1                               all          Basic TCP/IP networking system
+ii  opensc                             0.20.0-3                          amd64        Smart card utilities with support for PKCS#15 compatible cards
+ii  opensc-pkcs11:amd64                0.20.0-3                          amd64        Smart card utilities with support for PKCS#15 compatible cards
+ii  openssh-client                     1:8.2p1-4ubuntu0.2                amd64        secure shell (SSH) client, for secure access to remote machines
+ii  openssl                            1.1.1f-1ubuntu2.3                 amd64        Secure Sockets Layer toolkit - cryptographic utility
+ii  passwd                             1:4.8.1-1ubuntu5.20.04            amd64        change and administer password and group data
+ii  patch                              2.7.6-6                           amd64        Apply a diff file to an original
+ii  pcscd                              1.8.26-3                          amd64        Middleware to access a smart card using PC/SC (daemon side)
+ii  perl                               5.30.0-9ubuntu0.2                 amd64        Larry Wall's Practical Extraction and Report Language
+ii  perl-base                          5.30.0-9ubuntu0.2                 amd64        minimal Perl system
+ii  perl-modules-5.30                  5.30.0-9ubuntu0.2                 all          Core Perl modules
+ii  pesign                             0.112-5                           amd64        Signing utility for UEFI binaries
+ii  procps                             2:3.3.16-1ubuntu2                 amd64        /proc file system utilities
+ii  publicsuffix                       20200303.0012-1                   all          accurate, machine-readable list of domain name suffixes
+ii  readline-common                    8.0-4                             all          GNU readline and history libraries, common files
+ii  sed                                4.7-1                             amd64        GNU stream editor for filtering/transforming text
+ii  sensible-utils                     0.0.12+nmu1                       all          Utilities for sensible alternative selection
+ii  shared-mime-info                   1.15-1                            amd64        FreeDesktop.org shared MIME database and spec
+ii  sysvinit-utils                     2.96-2.1ubuntu1                   amd64        System-V-like utilities
+ii  tar                                1.30+dfsg-7ubuntu0.20.04.1        amd64        GNU version of the tar archiving utility
+ii  tzdata                             2021a-0ubuntu0.20.04              all          time zone and daylight-saving time data
+ii  ubuntu-keyring                     2020.02.11.2                      all          GnuPG keys of the Ubuntu archive
+ii  util-linux                         2.34-0.1ubuntu9.1                 amd64        miscellaneous system utilities
+ii  xauth                              1:1.1-0ubuntu1                    amd64        X authentication utility
+ii  xdg-user-dirs                      0.17-2ubuntu1                     amd64        tool to manage well known user directories
+ii  xz-utils                           5.2.4-1ubuntu1                    amd64        XZ-format compression utilities
+ii  zlib1g:amd64                       1:1.2.11.dfsg-2ubuntu1.2          amd64        compression library - runtime
+ii  zlib1g-dev:amd64                   1:1.2.11.dfsg-2ubuntu1.2          amd64        compression library - development
+Removing intermediate container 914192699eeb
+ ---> b96f0acbc1cc
 Step 15/21 : ARG EFIDIR=
- ---> Using cache
- ---> d3ffc9445db6
+ ---> Running in 352d977410a2
+Removing intermediate container 352d977410a2
+ ---> 76a15cfcf3b9
 Step 16/21 : RUN tar --strip-components=1 -xf /tmp/${SHIM_ARCHIVE_FILE} &&     (for name in $(find /tmp/patches -type f -name "*.patch" | sort); do patch -p1 < $name; done) &&     mkdir -p build-x86_64/data build-ia32/data build-aarch64/data output/x86_64 output/ia32 output/aarch64 &&     cp -f /tmp/sbat.csv data/sbat.csv &&     cp /tmp/sbat.csv build-x86_64/data/sbat.csv &&     cp /tmp/sbat.csv build-ia32/data/sbat.csv &&     cp /tmp/sbat.csv build-aarch64/data/sbat.csv
- ---> Running in 3d2faa3fe635
+ ---> Running in d89c884bbbcd
 patching file .github/workflows/pullrequest.yml
 Hunk #1 FAILED at 110.
 1 out of 1 hunk FAILED -- saving rejects to file .github/workflows/pullrequest.yml.rej
@@ -50,10 +285,10 @@ patching file Make.defaults
 patching file Makefile
 patching file lib/Makefile
 patching file gnu-efi/Make.defaults
-Removing intermediate container 3d2faa3fe635
- ---> 0e360ce860b0
+Removing intermediate container d89c884bbbcd
+ ---> f34c67beb2f1
 Step 17/21 : RUN make -C build-x86_64 TOPDIR=.. ARCH=x86_64 VENDOR_CERT_FILE=/tmp/vendor_cert.der EFIDIR=${EFIDIR} DESTDIR=/work/output/x86_64 ENABLE_SHIM_HASH=true -f ../Makefile install
- ---> Running in a765d6b189f7
+ ---> Running in 33bcaa758447
 make: Entering directory '/work/build-x86_64'
 sed	-e "s,@@VERSION@@,15.3," \
 	-e "s,@@UNAME@@,Linux x86_64 x86_64 x86_64 GNU/Linux," \
@@ -612,7 +847,7 @@ make[2]: Entering directory '/work/build-x86_64/gnu-efi/x86_64/gnuefi'
 gcc -I/work/gnu-efi//gnuefi -I/work/gnu-efi/inc -I/work/gnu-efi/inc/x86_64 -I/work/gnu-efi/inc/protocol -Wno-error=pragmas -mno-red-zone -mno-avx -fpic  -Os -Wall -Wextra -Wno-missing-field-initializers -Werror -fshort-wchar -fno-strict-aliasing -ffreestanding -fno-stack-protector -fno-stack-check -nostdinc -isystem /work/gnu-efi/../include/system -isystem /usr/lib/gcc/x86_64-linux-gnu/9/include -fno-merge-all-constants -DCONFIG_x86_64 -DGNU_EFI_USE_MS_ABI -DGNU_EFI_USE_EXTERNAL_STDARG -maccumulate-outgoing-args --std=c11 -c /work/gnu-efi//gnuefi/crt0-efi-x86_64.S -o crt0-efi-x86_64.o
 gcc -I/work/gnu-efi//gnuefi -I/work/gnu-efi/inc -I/work/gnu-efi/inc/x86_64 -I/work/gnu-efi/inc/protocol -Wno-error=pragmas -mno-red-zone -mno-avx -fpic  -Os -Wall -Wextra -Wno-missing-field-initializers -Werror -fshort-wchar -fno-strict-aliasing -ffreestanding -fno-stack-protector -fno-stack-check -nostdinc -isystem /work/gnu-efi/../include/system -isystem /usr/lib/gcc/x86_64-linux-gnu/9/include -fno-merge-all-constants -DCONFIG_x86_64 -DGNU_EFI_USE_MS_ABI -DGNU_EFI_USE_EXTERNAL_STDARG -maccumulate-outgoing-args --std=c11 -c /work/gnu-efi//gnuefi/reloc_x86_64.c -o reloc_x86_64.o
 gcc-ar rv -U libgnuefi.a reloc_x86_64.o
-[91m/usr/bin/ar: creating libgnuefi.a
+[91m/usr/bin/ar: [0m[91mcreating libgnuefi.a[0m[91m
 [0ma - reloc_x86_64.o
 make[2]: Leaving directory '/work/build-x86_64/gnu-efi/x86_64/gnuefi'
 mkdir -p /work/build-x86_64/gnu-efi/x86_64/inc
@@ -631,7 +866,7 @@ objcopy -D -j .text -j .sdata -j .data -j .data.ident \
 dd conv=notrunc bs=1 count=4 seek=136 if=/dev/zero of=shimx64.efi
 [91m4+0 records in
 4+0 records out
-4 bytes copied, 5.0081e-05 s, 79.9 kB/s
+4 bytes copied, 6.0835e-05 s, 65.8 kB/s
 [0mobjcopy -D -j .text -j .sdata -j .data \
 	-j .dynamic -j .dynsym -j .rel* \
 	-j .rela* -j .reloc -j .eh_frame -j .sbat \
@@ -669,7 +904,7 @@ objcopy -D -j .text -j .sdata -j .data -j .data.ident \
 dd conv=notrunc bs=1 count=4 seek=136 if=/dev/zero of=mmx64.efi
 [91m4+0 records in
 4+0 records out
-4 bytes copied, 8.6083e-05 s, 46.5 kB/s
+4 bytes copied, 6.3806e-05 s, 62.7 kB/s
 [0mobjcopy -D -j .text -j .sdata -j .data -j .data.ident \
 	-j .dynamic -j .dynsym -j .rel* \
 	-j .rela* -j .reloc -j .eh_frame \
@@ -679,7 +914,7 @@ dd conv=notrunc bs=1 count=4 seek=136 if=/dev/zero of=mmx64.efi
 dd conv=notrunc bs=1 count=4 seek=136 if=/dev/zero of=fbx64.efi
 [91m4+0 records in
 4+0 records out
-4 bytes copied, 4.8208e-05 s, 83.0 kB/s
+4 bytes copied, 4.8695e-05 s, 82.1 kB/s
 [0mgcc -I/usr/include -Og -g3 -Wall -Werror -Wextra -o buildid /work/buildid.c -lelf
 Making BOOTX64.CSV
 install -d -m 0755 /work/output/x86_64/
@@ -704,10 +939,10 @@ install -m 0644 fbx64.efi /work/output/x86_64/boot/efi/EFI/BOOT//
 install -m 0644 mmx64.efi /work/output/x86_64/boot/efi/EFI/BOOT//
 install -m 0644 mmx64.efi /work/output/x86_64/boot/efi/EFI/ZeronsoftN//
 make: Leaving directory '/work/build-x86_64'
-Removing intermediate container a765d6b189f7
- ---> 0a9621d53724
+Removing intermediate container 33bcaa758447
+ ---> f76cd326fccd
 Step 18/21 : RUN make -C build-ia32 TOPDIR=.. ARCH=ia32 VENDOR_CERT_FILE=/tmp/vendor_cert.der EFIDIR=${EFIDIR} DESTDIR=/work/output/ia32 ENABLE_SHIM_HASH=true -f ../Makefile install
- ---> Running in 0c4446192412
+ ---> Running in 59b927a2e2e9
 make: Entering directory '/work/build-ia32'
 sed	-e "s,@@VERSION@@,15.3," \
 	-e "s,@@UNAME@@,Linux x86_64 x86_64 x86_64 GNU/Linux," \
@@ -1261,7 +1496,7 @@ make -C /work/build-ia32/gnu-efi/ia32/gnuefi -f /work/gnu-efi//gnuefi/Makefile S
 make[2]: Entering directory '/work/build-ia32/gnu-efi/ia32/gnuefi'
 gcc -I/work/gnu-efi//gnuefi -I/work/gnu-efi/inc -I/work/gnu-efi/inc/ia32 -I/work/gnu-efi/inc/protocol -Wno-error=pragmas -mno-mmx -mno-sse -mno-avx -fpic -m32 -Os -Wall -Wextra -Wno-missing-field-initializers -Werror -fshort-wchar -fno-strict-aliasing -ffreestanding -fno-stack-protector -fno-stack-check -nostdinc -isystem /work/gnu-efi/../include/system -isystem /usr/lib/gcc/x86_64-linux-gnu/9/include -fno-merge-all-constants -DCONFIG_ia32 -c /work/gnu-efi//gnuefi/crt0-efi-ia32.S -o crt0-efi-ia32.o
 [91m/work/gnu-efi//gnuefi/crt0-efi-ia32.S: Assembler messages:
-[0m[91m/work/gnu-efi//gnuefi/crt0-efi-ia32.S:74: Warning: setting incorrect section attributes for .reloc
+/work/gnu-efi//gnuefi/crt0-efi-ia32.S:74: Warning: setting incorrect section attributes for .reloc
 [0mgcc -I/work/gnu-efi//gnuefi -I/work/gnu-efi/inc -I/work/gnu-efi/inc/ia32 -I/work/gnu-efi/inc/protocol -Wno-error=pragmas -mno-mmx -mno-sse -mno-avx -fpic -m32 -Os -Wall -Wextra -Wno-missing-field-initializers -Werror -fshort-wchar -fno-strict-aliasing -ffreestanding -fno-stack-protector -fno-stack-check -nostdinc -isystem /work/gnu-efi/../include/system -isystem /usr/lib/gcc/x86_64-linux-gnu/9/include -fno-merge-all-constants -DCONFIG_ia32 -c /work/gnu-efi//gnuefi/reloc_ia32.c -o reloc_ia32.o
 gcc-ar rv -U libgnuefi.a reloc_ia32.o
 [91m/usr/bin/ar: creating libgnuefi.a
@@ -1283,7 +1518,7 @@ objcopy -D -j .text -j .sdata -j .data -j .data.ident \
 dd conv=notrunc bs=1 count=4 seek=136 if=/dev/zero of=shimia32.efi
 [91m4+0 records in
 4+0 records out
-[0m[91m4 bytes copied, 0.000177745 s, 22.5 kB/s
+4 bytes copied, 4.3524e-05 s, 91.9 kB/s
 [0mobjcopy -D -j .text -j .sdata -j .data \
 	-j .dynamic -j .dynsym -j .rel* \
 	-j .rela* -j .reloc -j .eh_frame -j .sbat \
@@ -1324,7 +1559,7 @@ objcopy -D -j .text -j .sdata -j .data -j .data.ident \
 dd conv=notrunc bs=1 count=4 seek=136 if=/dev/zero of=mmia32.efi
 [91m4+0 records in
 4+0 records out
-4 bytes copied, 4.6425e-05 s, 86.2 kB/s
+4 bytes copied, 6.0251e-05 s, 66.4 kB/s
 [0mobjcopy -D -j .text -j .sdata -j .data -j .data.ident \
 	-j .dynamic -j .dynsym -j .rel* \
 	-j .rela* -j .reloc -j .eh_frame \
@@ -1334,14 +1569,14 @@ dd conv=notrunc bs=1 count=4 seek=136 if=/dev/zero of=mmia32.efi
 dd conv=notrunc bs=1 count=4 seek=136 if=/dev/zero of=fbia32.efi
 [91m4+0 records in
 4+0 records out
-4 bytes copied, 0.000211579 s, 18.9 kB/s
+4 bytes copied, 3.7364e-05 s, 107 kB/s
 [0mgcc -I/usr/include -Og -g3 -Wall -Werror -Wextra -o buildid /work/buildid.c -lelf
 Making BOOTIA32.CSV
 install -d -m 0755 /work/output/ia32/
 install -d -m 0755 /work/output/ia32//usr/lib/debug/boot/efi/EFI/ZeronsoftN//
 [91mUsage: buildid [ flags | file0 [file1 [.. fileN]]]
-Flags:
-       -h    Print this help text and exit
+[0m[91mFlags:
+[0m[91m       -h    Print this help text and exit
 [0minstall -d -m 0755 /work/output/ia32//usr/src/debug//shim-15.3
 find /work -type f -a '(' -iname '*.c' -o -iname '*.h' -o -iname '*.S' ')' | while read file ; do \
 	outfile=$(echo ${file} | sed -e "s,^/work,,") ; \
@@ -1359,10 +1594,10 @@ install -m 0644 fbia32.efi /work/output/ia32/boot/efi/EFI/BOOT//
 install -m 0644 mmia32.efi /work/output/ia32/boot/efi/EFI/BOOT//
 install -m 0644 mmia32.efi /work/output/ia32/boot/efi/EFI/ZeronsoftN//
 make: Leaving directory '/work/build-ia32'
-Removing intermediate container 0c4446192412
- ---> b6b3825088d4
+Removing intermediate container 59b927a2e2e9
+ ---> 4522b48cb297
 Step 19/21 : RUN make -C build-aarch64 TOPDIR=.. ARCH=aarch64 CROSS_COMPILE=aarch64-linux-gnu- VENDOR_CERT_FILE=/tmp/vendor_cert.der EFIDIR=${EFIDIR} DESTDIR=/work/output/aarch64 ENABLE_SHIM_HASH=true -f ../Makefile install
- ---> Running in aeee8738ae58
+ ---> Running in 76a9f2df8c85
 make: Entering directory '/work/build-aarch64'
 sed	-e "s,@@VERSION@@,15.3," \
 	-e "s,@@UNAME@@,Linux x86_64 x86_64 x86_64 GNU/Linux," \
@@ -1936,7 +2171,7 @@ aarch64-linux-gnu-objcopy -D -j .text -j .sdata -j .data -j .data.ident \
 dd conv=notrunc bs=1 count=4 seek=72 if=/dev/zero of=shimaa64.efi
 [91m4+0 records in
 4+0 records out
-4 bytes copied, 5.8384e-05 s, 68.5 kB/s
+4 bytes copied, 5.0242e-05 s, 79.6 kB/s
 [0maarch64-linux-gnu-objcopy -D -j .text -j .sdata -j .data \
 	-j .dynamic -j .dynsym -j .rel* \
 	-j .rela* -j .reloc -j .eh_frame -j .sbat \
@@ -1974,7 +2209,7 @@ aarch64-linux-gnu-objcopy -D -j .text -j .sdata -j .data -j .data.ident \
 dd conv=notrunc bs=1 count=4 seek=72 if=/dev/zero of=mmaa64.efi
 [91m4+0 records in
 4+0 records out
-4 bytes copied, 7.0854e-05 s, 56.5 kB/s
+4 bytes copied, 5.5447e-05 s, 72.1 kB/s
 [0maarch64-linux-gnu-objcopy -D -j .text -j .sdata -j .data -j .data.ident \
 	-j .dynamic -j .dynsym -j .rel* \
 	-j .rela* -j .reloc -j .eh_frame \
@@ -1984,7 +2219,7 @@ dd conv=notrunc bs=1 count=4 seek=72 if=/dev/zero of=mmaa64.efi
 dd conv=notrunc bs=1 count=4 seek=72 if=/dev/zero of=fbaa64.efi
 [91m4+0 records in
 4+0 records out
-4 bytes copied, 8.2397e-05 s, 48.5 kB/s
+4 bytes copied, 5.1572e-05 s, 77.6 kB/s
 [0mgcc -I/usr/include -Og -g3 -Wall -Werror -Wextra -o buildid /work/buildid.c -lelf
 Making BOOTAA64.CSV
 install -d -m 0755 /work/output/aarch64/
@@ -2009,14 +2244,14 @@ install -m 0644 fbaa64.efi /work/output/aarch64/boot/efi/EFI/BOOT//
 install -m 0644 mmaa64.efi /work/output/aarch64/boot/efi/EFI/BOOT//
 install -m 0644 mmaa64.efi /work/output/aarch64/boot/efi/EFI/ZeronsoftN//
 make: Leaving directory '/work/build-aarch64'
-Removing intermediate container aeee8738ae58
- ---> 70c6b1b1b2c1
+Removing intermediate container 76a9f2df8c85
+ ---> 7d65733f3b11
 Step 20/21 : RUN objcopy -j .sbat -O binary /work/output/x86_64/boot/efi/EFI/ZeronsoftN/shimx64.efi /tmp/shimx64-sbat.csv && sed -i 's/\x0//g' /tmp/shimx64-sbat.csv &&     objcopy -j .sbat -O binary /work/output/ia32/boot/efi/EFI/ZeronsoftN/shimia32.efi /tmp/shimia32-sbat.csv && sed -i 's/\x0//g' /tmp/shimia32-sbat.csv &&     diff /tmp/shimx64-sbat.csv /tmp/sbat.csv &&     diff /tmp/shimia32-sbat.csv /tmp/sbat.csv || ( >&2 echo "SBAT IS NOT APPLIED CORRECTLY"; exit 1 )
- ---> Running in cdada11fd0f4
-Removing intermediate container cdada11fd0f4
- ---> 4db33275af05
+ ---> Running in 91cee0f7273e
+Removing intermediate container 91cee0f7273e
+ ---> 3a1a931e4bed
 Step 21/21 : RUN cd /work/output && tar -cvf /work/output/output.tar x86_64 ia32 aarch64
- ---> Running in dc538dcc1204
+ ---> Running in 53e443f251e4
 x86_64/
 x86_64/boot/
 x86_64/boot/efi/
@@ -8253,7 +8488,7 @@ aarch64/usr/src/debug/shim-15.3/sbat.c
 aarch64/usr/src/debug/shim-15.3/tpm.c
 aarch64/usr/src/debug/shim-15.3/test-sbat.c
 aarch64/usr/src/debug/shim-15.3/replacements.c
-Removing intermediate container dc538dcc1204
- ---> 7a5e2bef8ddd
-Successfully built 7a5e2bef8ddd
+Removing intermediate container 53e443f251e4
+ ---> a86cf994b86b
+Successfully built a86cf994b86b
 Successfully tagged zeron-shim-builder:latest
