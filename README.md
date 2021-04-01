@@ -129,21 +129,21 @@ GKmKdDXD05I0qOeFZTVWkN39QOqp1ZadzGxXD7hMHaV9Wh9vNcgn
 ```
 
 -------------------------------------------------------------------------------
-Please create your shim binaries starting with the 15.3 shim release tar file:
-https://github.com/rhboot/shim/releases/download/15.3/shim-15.3.tar.bz2
+Please create your shim binaries starting with the 15.4 shim release tar file:
+https://github.com/rhboot/shim/releases/download/15.4/shim-15.4.tar.bz2
 
-This matches https://github.com/rhboot/shim/releases/tag/15.3 and contains
+This matches https://github.com/rhboot/shim/releases/tag/15.4 and contains
 the appropriate gnu-efi source.
 -------------------------------------------------------------------------------
 ```
-YES. I used "https://github.com/rhboot/shim/releases/download/15.3/shim-15.3.tar.bz2". (sha256=df76c9b68cf6e6d9c024059b5335701441c366cdcced2ae21e115f3901cb8333)
+YES. I used "https://github.com/rhboot/shim/releases/download/15.4/shim-15.4.tar.bz2"
 ```
 
 -------------------------------------------------------------------------------
 URL for a repo that contains the exact code which was built to get this binary:
 -------------------------------------------------------------------------------
 ```
-https://github.com/zeronsoftn/shim-builder/blob/zeron/15.3-0/docker/shim-15.3.tar.bz2
+https://github.com/rhboot/shim/releases/download/15.4/shim-15.4.tar.bz2
 ```
 
 -------------------------------------------------------------------------------
@@ -153,13 +153,6 @@ What patches are being applied and why:
 None
 ```
 
-But There are some patches only for the build part.
-
-https://github.com/zeronsoftn/shim-builder/tree/ba6032cf888c9ca788901718892246ac4a2f52a0/docker/patches
-
-- 0001-Make-building-outside-of-the-top-directory-work.patch : https://github.com/rhboot/shim/commit/8578b75f9c18fd267c8a0746192ab3f051561df2
-- 0002-Make-building-outside-of-this-directory-work.patch : https://github.com/rhboot/gnu-efi/commit/65ecce23f005c4d611f48996112d4592164594cf
-
 -------------------------------------------------------------------------------
 If bootloader, shim loading is, GRUB2: is CVE-2020-14372, CVE-2020-25632,
  CVE-2020-25647, CVE-2020-27749, CVE-2020-27779, CVE-2021-20225, CVE-2021-20233,
@@ -167,9 +160,9 @@ If bootloader, shim loading is, GRUB2: is CVE-2020-14372, CVE-2020-25632,
  CVE-2020-15705, and if you are shipping the shim_lock module CVE-2021-3418
 -------------------------------------------------------------------------------
 ```
-We will use Ubuntu's `grub2_2.04-1ubuntu28`, and we will update it as well when version 2.06 or later is released.
+We will use Ubuntu's `debian/2.04-1ubuntu26.9`.
+https://github.com/zeronsoftn/grub2/tree/zeron-2.04 (Exactly matches Ubuntu's debian/2.04-1ubuntu26.9 commit)
 ```
-
 
 -------------------------------------------------------------------------------
 What exact implementation of Secureboot in GRUB2 ( if this is your bootloader ) you have ?
@@ -258,5 +251,5 @@ Which files in this repo are the logs for your build?   This should include logs
 Add any additional information you think we may need to validate this shim
 -------------------------------------------------------------------------------
 
-Builder for docker : https://github.com/zeronsoftn/shim-builder/tree/zeron/15.3-0 (commit id : 2bec8ee23c761992650ffc522d93d09119fa174d)
+Builder for docker : https://github.com/zeronsoftn/shim-builder/tree/zeron/15.4-0 (commit id : 9f5e1cf0eaa6ba12b4b5f404f678d914f7da8a7b)
 
