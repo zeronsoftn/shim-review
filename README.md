@@ -251,5 +251,7 @@ Which files in this repo are the logs for your build?   This should include logs
 Add any additional information you think we may need to validate this shim
 -------------------------------------------------------------------------------
 
-Builder for docker : https://github.com/zeronsoftn/shim-builder/tree/zeron/15.4-1 (commit id : dd158d28952e3ce6b2d7bf81ecb4fc103cf3b463)
+```bash
+./build.sh
+```
 
