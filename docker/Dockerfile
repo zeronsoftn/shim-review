@@ -51,5 +51,6 @@ RUN objcopy -j .sbat -O binary /work/output/x86_64/boot/efi/EFI/ZeronsoftN/shimx
     diff /tmp/shimx64-sbat.csv /tmp/sbat.csv && \
     diff /tmp/shimia32-sbat.csv /tmp/sbat.csv || ( >&2 echo "SBAT IS NOT APPLIED CORRECTLY"; exit 1 )
 
-RUN cd /work/output && tar -cvf /work/output/output.tar x86_64 ia32 aarch64
+RUN for name in $(find /work/output/ -type f -name "shim*.efi"); do echo "PESIGN($name): "; pesign --hash --padding --in=$name; echo "SHA256SUM:"; sha256sum $name; echo; done
+RUN cd /work/output && tar -cf /work/output/output.tar x86_64 ia32 aarch64
 
