@@ -1,0 +1,8 @@
+name: Main
+on: [push]
+jobs: 
+  build-shim:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - run: ./build.sh
