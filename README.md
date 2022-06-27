@@ -285,11 +285,7 @@ This should include logs for creating the buildroots, applying patches, doing th
 ### What is the SHA256 hash of your final SHIM binary?
 -------------------------------------------------------------------------------
 
-```
-685d25649e4f7ef6f39d7a56352c0ffec34d4bae0099ac0e9f6a6951d040d96c  shimaa64.efi
-d0d86645c6f2cb10f1de5cf346693b60038cf5efa687ad66846a2a4a307de773  shimia32.efi
-f5ecfb00e100eb90be0fe8cee458909edc2907b77d39cefc4cde608d4e2a255e  shimx64.efi
-```
+See [review/hashs.txt](review/hashs.txt)
 
 -------------------------------------------------------------------------------
 ### How do you manage and protect the keys used in your SHIM?
@@ -396,6 +392,6 @@ https://github.com/zeronsoftn/alpine-pkg-kernel/tree/a1854010b5ccd0cee64cb949cb6
 
 Build log reproduced from github workflow:
 
-https://github.com/zeronsoftn/shim-review/actions/runs/2567350764
+https://github.com/zeronsoftn/shim-review/runs/7069830684
 
 
