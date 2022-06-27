@@ -58,4 +58,5 @@ FROM scratch
 COPY --from=builder /work/output/x86_64 /x86_64
 COPY --from=builder /work/output/ia32 /ia32
 COPY --from=builder /work/output/aarch64 /aarch64
+COPY --from=builder /work/output/builder-packages.txt /builder-packages.txt
 

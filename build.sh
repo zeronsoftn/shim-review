@@ -31,6 +31,7 @@ build_args+=(.)
 docker "${build_args[@]}" 2>&1 | tee review/build-log.txt
 
 cp $(find output -type f -name "shim*.efi") review/
+cp output/*.txt review/
 
 ( cd review && sha256sum shim*.efi > hashs.txt )
 
