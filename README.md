@@ -270,7 +270,8 @@ All package versions are displayed in the build log. It also has a Dockerfile.
 This should include logs for creating the buildroots, applying patches, doing the build, creating the archives, etc.
 
 -------------------------------------------------------------------------------
-[your text here]
+
+[./review/build-log.txt](./review/build-log.txt)
 
 -------------------------------------------------------------------------------
 ### What changes were made since your SHIM was last signed?
