@@ -14,7 +14,7 @@ ARG SHIM_ARCHIVE_URL=
 ARG SHIM_ARCHIVE_FILE=
 ARG SHIM_ARCHIVE_SHA256=
 
-COPY [ "vendor_cert.der", "sbat.csv", "/tmp/" ]
+COPY [ "vendor_cert.der", "sbat.csv", "vendor_dbx.bin", "/tmp/" ]
 COPY [ "patches", "/tmp/patches" ]
 RUN cd /tmp && \
     set -x  && \
@@ -41,9 +41,9 @@ RUN tar --strip-components=1 -xf "/tmp/${SHIM_ARCHIVE_FILE}" && \
     cp /tmp/sbat.csv build-ia32/data/sbat.csv && \
     cp /tmp/sbat.csv build-aarch64/data/sbat.csv
 
-RUN make -C build-x86_64 TOPDIR=.. ARCH=x86_64 VENDOR_CERT_FILE=/tmp/vendor_cert.der EFIDIR=${EFIDIR} DESTDIR=/work/output/x86_64 ENABLE_SHIM_HASH=true -f ../Makefile install
-RUN make -C build-ia32 TOPDIR=.. ARCH=ia32 VENDOR_CERT_FILE=/tmp/vendor_cert.der EFIDIR=${EFIDIR} DESTDIR=/work/output/ia32 ENABLE_SHIM_HASH=true -f ../Makefile install
-RUN make -C build-aarch64 TOPDIR=.. ARCH=aarch64 CROSS_COMPILE=aarch64-linux-gnu- VENDOR_CERT_FILE=/tmp/vendor_cert.der EFIDIR=${EFIDIR} DESTDIR=/work/output/aarch64 ENABLE_SHIM_HASH=true -f ../Makefile install
+RUN make -C build-x86_64 TOPDIR=.. ARCH=x86_64 VENDOR_CERT_FILE=/tmp/vendor_cert.der VENDOR_DBX_FILE=/tmp/vendor_dbx.bin EFIDIR=${EFIDIR} DESTDIR=/work/output/x86_64 ENABLE_SHIM_HASH=true -f ../Makefile install
+RUN make -C build-ia32 TOPDIR=.. ARCH=ia32 VENDOR_CERT_FILE=/tmp/vendor_cert.der VENDOR_DBX_FILE=/tmp/vendor_dbx.bin EFIDIR=${EFIDIR} DESTDIR=/work/output/ia32 ENABLE_SHIM_HASH=true -f ../Makefile install
+RUN make -C build-aarch64 TOPDIR=.. ARCH=aarch64 CROSS_COMPILE=aarch64-linux-gnu- VENDOR_CERT_FILE=/tmp/vendor_cert.der VENDOR_DBX_FILE=/tmp/vendor_dbx.bin EFIDIR=${EFIDIR} DESTDIR=/work/output/aarch64 ENABLE_SHIM_HASH=true -f ../Makefile install
 RUN objcopy -j .sbat -O binary /work/output/x86_64/boot/efi/EFI/ZeronsoftN/shimx64.efi /tmp/shimx64-sbat.csv && sed -i 's/\x0//g' /tmp/shimx64-sbat.csv && \
     objcopy -j .sbat -O binary /work/output/ia32/boot/efi/EFI/ZeronsoftN/shimia32.efi /tmp/shimia32-sbat.csv && sed -i 's/\x0//g' /tmp/shimia32-sbat.csv && \
     aarch64-linux-gnu-objcopy -j .sbat -O binary /work/output/aarch64/boot/efi/EFI/ZeronsoftN/shimaa64.efi /tmp/shimaa64-sbat.csv && sed -i 's/\x0//g' /tmp/shimaa64-sbat.csv && \
