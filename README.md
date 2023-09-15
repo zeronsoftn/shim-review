@@ -40,6 +40,7 @@ ZeroCle is a disk sanitize solution, booting into Linux is required for sanitize
 
 - We use alpine, but alpine does not sign the kernel. So we will achieve trusted boot by signing that kernel.
 - We also generate a single executable grub.efi with the grub-mkstandalone tool with check_signatures enabled to prevent tampering with grub's configuration.
+- We will also use systemd-boot. (requires a small linux run with minimal efi file) 
 
 *******************************************************************************
 ### Who is the primary contact for security updates, etc.?
@@ -160,7 +161,7 @@ Yes
 ### URL for a repo that contains the exact code which was built to get this binary:
 *******************************************************************************
 
-See [config.sh](./config.sh)
+See [Dockerfile](./Dockerfile)
 
 ```
 SHIM_ARCHIVE_URL=https://github.com/rhboot/shim/releases/download/15.7/shim-15.7.tar.bz2
@@ -181,10 +182,10 @@ SHIM_ARCHIVE_SHA256=87cdeb190e5c7fe441769dde11a1b507ed7328e70a178cd9858c7ac7065c
 ### If shim is loading GRUB2 bootloader what exact implementation of Secureboot in GRUB2 do you have? (Either Upstream GRUB2 shim_lock verifier or Downstream RHEL/Fedora/Debian/Canonical-like implementation)
 *******************************************************************************
 
-We use debian's implementation of GRUB2 - latest from bullseye
+We use debian's implementation of GRUB2 - latest from bookworm
 
 ```
-grub-efi-amd64-signed     1+2.06+3~deb11u5
+grub-efi-amd64-bin        2.06-13
 ```
 
 *******************************************************************************
@@ -243,7 +244,7 @@ We have no shims signed pre-SBAT.
 
 Yes. They are all applied.
 
-5.15.98: https://github.com/zeronsoftn/alpine-packages/tree/a891088f81f5cd36b7886f5e3905df19f55eb0d7/main/linux-lts
+6.1.43: https://github.com/alpinelinux/aports/tree/v3.18.3/main/linux-lts
 
 *******************************************************************************
 ### Do you build your signed kernel with additional local patches? What do they do?
@@ -290,9 +291,9 @@ shim-15.7
 *******************************************************************************
 
 ```
-0cce8d1b89075739840a30db40ff9cb0a372b0b38c0e50afd4225379de61ef35  shimaa64.efi
-6fa59470093eae65bee01d88e576e83ba92e7bff9222f391f349c41245e59b8c  shimia32.efi
-c9c614bd36ba5399b68dae79f023ba3d9e3af590778fa080961cd10c671fd328  shimx64.efi
+8b1acf748a7390afcc8084fb5c6b2561eae8074cc4885db0c3c7f9666c5962a2  shimaa64.efi
+a340c4acba8e5b0b0a6502790ade67289624dca8dd6b165401e08b3da8c47137  shimia32.efi
+c8300ef317ff4bdfe2ca223690062a43ccd350cad4ee65abb3d71349a5d32f63  shimx64.efi
 ```
 
 *******************************************************************************
@@ -318,21 +319,21 @@ SHIM:
 ```
 sbat,1,SBAT Version,sbat,1,https://github.com/rhboot/shim/blob/main/SBAT.md
 shim,3,UEFI shim,shim,1,https://github.com/rhboot/shim
-shim.zeronsoftn,1,ZeronsoftN,shim,15.7-0zeron1,https://github.com/zeronsoftn/shim-release
+shim.zeronsoftn,2,ZeronsoftN,shim,15.7-0zeron2,https://github.com/zeronsoftn/shim-release
 ```
 
 GRUB:
 ```
 sbat,1,SBAT Version,sbat,1,https://github.com/rhboot/shim/blob/main/SBAT.md
 grub,3,Free Software Foundation,grub,2.06,https://www.gnu.org/software/grub/
-grub.debian,4,Debian,grub2,2.06-3~deb11u5,https://tracker.debian.org/pkg/grub2
+grub.debian,4,Debian,grub2,2.06-13,https://tracker.debian.org/pkg/grub2
 ```
 
 systemd uefi stub:
 ```
 sbat,1,SBAT Version,sbat,1,https://github.com/rhboot/shim/blob/main/SBAT.md
-systemd,1,The systemd Developers,systemd,253,https://systemd.io/
-systemd.zeronsoftn,1,ZeronsoftN,systemd,253-0zeron1,https://github.com/zeronsoftn/
+systemd,1,The systemd Developers,systemd,254,https://systemd.io/
+systemd.zeronsoftn,1,ZeronsoftN,systemd,254-0zeron1,https://github.com/zeronsoftn/
 ```
 
 *******************************************************************************
@@ -347,8 +348,8 @@ ahci reboot halt minicmd help diskfilter acpi ata blocklist boot cat cmp configf
 ### What is the origin and full version number of your bootloader (GRUB or other)?
 *******************************************************************************
 
-grub-efi-amd64-signed_1+2.06+3~deb11u5_amd64
-https://packages.debian.org/source/bullseye/grub2
+grub-efi-amd64-bin 2.06-13
+https://packages.debian.org/source/bookworm/grub2
 
 *******************************************************************************
 ### If your SHIM launches any other components, please provide further details on what is launched.
@@ -385,10 +386,12 @@ No
 ### What kernel are you using? Which patches does it includes to enforce Secure Boot?
 *******************************************************************************
 
-5.15.98: https://github.com/zeronsoftn/alpine-packages/tree/a891088f81f5cd36b7886f5e3905df19f55eb0d7/main/linux-lts
+6.1.43: https://github.com/alpinelinux/aports/tree/v3.18.3/main/linux-lts
 
 A lockdown patch has already been applied to this version of Linux.
 
 *******************************************************************************
 ### Add any additional information you think we may need to validate this shim.
 *******************************************************************************
+
+Build: `docker buildx build --no-cache --output=type=tar,dest=output.tar .`

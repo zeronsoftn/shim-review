@@ -10,9 +10,9 @@ RUN mkdir -p /work && \
       binutils-x86-64-linux-gnu gcc \
       binutils-aarch64-linux-gnu gcc-aarch64-linux-gnu
 
-ARG SHIM_ARCHIVE_URL=
-ARG SHIM_ARCHIVE_FILE=
-ARG SHIM_ARCHIVE_SHA256=
+ARG SHIM_ARCHIVE_URL=https://github.com/rhboot/shim/releases/download/15.7/shim-15.7.tar.bz2
+ARG SHIM_ARCHIVE_FILE=shim-15.7.tar.bz2
+ARG SHIM_ARCHIVE_SHA256=87cdeb190e5c7fe441769dde11a1b507ed7328e70a178cd9858c7ac7065cfade
 
 COPY [ "vendor_cert.der", "sbat.csv", "vendor_dbx.bin", "/tmp/" ]
 COPY [ "patches", "/tmp/patches" ]
@@ -26,7 +26,7 @@ WORKDIR /work
 RUN mkdir -p /work/output && \
     dpkg -l | tee /work/output/builder-packages.txt
 
-ARG EFIDIR=
+ARG EFIDIR=ZeronsoftN
 RUN tar --strip-components=1 -xf "/tmp/${SHIM_ARCHIVE_FILE}" && \
     (for name in $(find /tmp/patches -type f -name "*.patch" | sort); do patch -p1 < $name; done) && \
     mkdir -p \
@@ -54,9 +54,8 @@ RUN objcopy -j .sbat -O binary /work/output/x86_64/boot/efi/EFI/ZeronsoftN/shimx
 
 RUN for name in $(find /work/output/ -type f -name "shim*.efi"); do echo "PESIGN($name): "; pesign --hash --padding --in=$name; echo "SHA256SUM:"; sha256sum $name; echo; done
 
-FROM scratch
-COPY --from=builder /work/output/x86_64 /x86_64
-COPY --from=builder /work/output/ia32 /ia32
-COPY --from=builder /work/output/aarch64 /aarch64
-COPY --from=builder /work/output/builder-packages.txt /builder-packages.txt
+# REVIEW
+RUN echo "::review hash-start" && \
+    for name in $(find /work/output/ -type f -name "shim*.efi"); do sha256sum $name; done && \
+    echo "::review hash-end"
 
