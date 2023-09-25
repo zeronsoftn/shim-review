@@ -297,9 +297,9 @@ shim-15.7
 *******************************************************************************
 
 ```
-8b1acf748a7390afcc8084fb5c6b2561eae8074cc4885db0c3c7f9666c5962a2  shimaa64.efi
-a340c4acba8e5b0b0a6502790ade67289624dca8dd6b165401e08b3da8c47137  shimia32.efi
-c8300ef317ff4bdfe2ca223690062a43ccd350cad4ee65abb3d71349a5d32f63  shimx64.efi
+f3366e185ee06249cde1c95b04fa734d987cc16606843dd99f8d9b2cf1a4fe5b  shimaa64.efi
+f43610923d846658e1b74e1df8d9c9f1f1295c6a5a0f9d4cb3ae2485c6bbb8a1  shimia32.efi
+8399c9109d658ec81461bd8c68bc1fa9103ca05b261e0b273feb843b55e76fd4  shimx64.efi
 ```
 
 *******************************************************************************
