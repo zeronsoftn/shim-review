@@ -178,6 +178,12 @@ SHIM_ARCHIVE_SHA256=87cdeb190e5c7fe441769dde11a1b507ed7328e70a178cd9858c7ac7065c
 - Don't loop forever in load_certs() with buggy firmware rhboot/shim#547
 - Add validation function for Microsoft signing rhboot/shim#531
 
+**zerox-shim**:
+- Run recovery EFI using the Fn key during booting to operate the recovery solution.
+- Read the config file and run onetime EFI for temporary booting
+- Use chain_load in normal situations
+- The above EFI executable will be created with systemd-stub, and all EFI files must be signed.
+
 *******************************************************************************
 ### If shim is loading GRUB2 bootloader what exact implementation of Secureboot in GRUB2 do you have? (Either Upstream GRUB2 shim_lock verifier or Downstream RHEL/Fedora/Debian/Canonical-like implementation)
 *******************************************************************************
