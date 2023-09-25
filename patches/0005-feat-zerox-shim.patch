@@ -1,0 +1,1834 @@
+From 30589e12ce90b0a6bdc026d9205fcf8e745a1f84 Mon Sep 17 00:00:00 2001
+From: Joseph Lee <joseph@zeronsoftn.com>
+Date: Mon, 25 Sep 2023 17:38:09 +0900
+Subject: [PATCH 1/2] feat: zerox-shim
+
+---
+ Makefile        |   4 +-
+ bds_connect.c   | 677 ++++++++++++++++++++++++++++++++++
+ include/zeron.h |  10 +
+ shim.c          |  78 ++--
+ zeron.c         | 957 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 1693 insertions(+), 33 deletions(-)
+ create mode 100644 bds_connect.c
+ create mode 100644 include/zeron.h
+ create mode 100644 zeron.c
+
+diff --git a/Makefile b/Makefile
+index a9202f4..fde197b 100644
+--- a/Makefile
++++ b/Makefile
+@@ -38,9 +38,9 @@ CFLAGS += -DENABLE_SHIM_CERT
+ else
+ TARGETS += $(MMNAME) $(FBNAME)
+ endif
+-OBJS	= shim.o globals.o mok.o netboot.o cert.o replacements.o tpm.o version.o errlog.o sbat.o sbat_data.o sbat_var.o pe.o httpboot.o csv.o load-options.o
++OBJS	= shim.o globals.o mok.o netboot.o cert.o replacements.o tpm.o version.o errlog.o sbat.o sbat_data.o sbat_var.o pe.o httpboot.o bds_connect.o zeron.o csv.o load-options.o
+ KEYS	= shim_cert.h ocsp.* ca.* shim.crt shim.csr shim.p12 shim.pem shim.key shim.cer
+-ORIG_SOURCES	= shim.c globals.c mok.c netboot.c replacements.c tpm.c errlog.c sbat.c pe.c httpboot.c shim.h version.h $(wildcard include/*.h) cert.S sbat_var.S
++ORIG_SOURCES	= shim.c globals.c mok.c netboot.c replacements.c tpm.c errlog.c sbat.c pe.c httpboot.c bds_connect.c zeron.c shim.h version.h $(wildcard include/*.h) cert.S sbat_var.S
+ MOK_OBJS = MokManager.o PasswordCrypt.o crypt_blowfish.o errlog.o sbat_data.o globals.o
+ ORIG_MOK_SOURCES = MokManager.c PasswordCrypt.c crypt_blowfish.c shim.h $(wildcard include/*.h)
+ FALLBACK_OBJS = fallback.o tpm.o errlog.o sbat_data.o globals.o
+diff --git a/bds_connect.c b/bds_connect.c
+new file mode 100644
+index 0000000..543c283
+--- /dev/null
++++ b/bds_connect.c
+@@ -0,0 +1,677 @@
++/** @file
++  BDS Lib functions which relate with connect the device
++
++Copyright (c) 2004 - 2008, Intel Corporation. All rights reserved.<BR>
++This program and the accompanying materials
++are licensed and made available under the terms and conditions of the BSD License
++which accompanies this distribution.  The full text of the license may be found at
++http://opensource.org/licenses/bsd-license.php
++
++THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
++WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
++
++**/
++
++#include "shim.h"
++
++#define MAX_UINT32   ((UINT32)0xFFFFFFFF)
++
++#define MAX_DEVICE_PATH_NODE_COUNT   1024
++
++#define EFI_HANDLE_TYPE_UNKNOWN                     0x000
++#define EFI_HANDLE_TYPE_IMAGE_HANDLE                0x001
++#define EFI_HANDLE_TYPE_DRIVER_BINDING_HANDLE       0x002
++#define EFI_HANDLE_TYPE_DEVICE_DRIVER               0x004
++#define EFI_HANDLE_TYPE_BUS_DRIVER                  0x008
++#define EFI_HANDLE_TYPE_DRIVER_CONFIGURATION_HANDLE 0x010
++#define EFI_HANDLE_TYPE_DRIVER_DIAGNOSTICS_HANDLE   0x020
++#define EFI_HANDLE_TYPE_COMPONENT_NAME_HANDLE       0x040
++#define EFI_HANDLE_TYPE_DEVICE_HANDLE               0x080
++#define EFI_HANDLE_TYPE_PARENT_HANDLE               0x100
++#define EFI_HANDLE_TYPE_CONTROLLER_HANDLE           0x200
++#define EFI_HANDLE_TYPE_CHILD_HANDLE                0x400
++
++//region PCI
++#define PCI_CLASS_DISPLAY          0x03
++#define   PCI_CLASS_DISPLAY_VGA    0x00
++#define     PCI_IF_VGA_VGA         0x00
++
++#define PCI_CLASS_SERIAL                 0x0C
++#define   PCI_CLASS_SERIAL_USB           0x03
++
++/**
++  Macro that checks whether the Base Class code of device matched.
++
++@param  _p      Specified device.
++		@param  c       Base Class code needs matching.
++
++		@retval TRUE    Base Class code matches the specified device.
++		@retval FALSE   Base Class code doesn't match the specified device.
++
++				**/
++#define IS_CLASS1(_p, c)  ((_p)->Hdr.ClassCode[2] == (c))
++
++/**
++  Macro that checks whether the Base Class code and Sub-Class code of device matched.
++
++  @param  _p      Specified device.
++  @param  c       Base Class code needs matching.
++  @param  s       Sub-Class code needs matching.
++
++  @retval TRUE    Base Class code and Sub-Class code match the specified device.
++  @retval FALSE   Base Class code and Sub-Class code don't match the specified device.
++
++**/
++#define IS_CLASS2(_p, c, s)  (IS_CLASS1 (_p, c) && ((_p)->Hdr.ClassCode[1] == (s)))
++
++/**
++  Macro that checks whether the Base Class code, Sub-Class code and Interface code of device matched.
++
++  @param  _p      Specified device.
++  @param  c       Base Class code needs matching.
++  @param  s       Sub-Class code needs matching.
++  @param  p       Interface code needs matching.
++
++  @retval TRUE    Base Class code, Sub-Class code and Interface code match the specified device.
++  @retval FALSE   Base Class code, Sub-Class code and Interface code don't match the specified device.
++
++**/
++#define IS_CLASS3(_p, c, s, p)  (IS_CLASS2 (_p, c, s) && ((_p)->Hdr.ClassCode[0] == (p)))
++
++/**
++  Macro that checks whether device is a VGA-compatible controller.
++
++  @param  _p      Specified device.
++
++  @retval TRUE    Device is a VGA-compatible controller.
++  @retval FALSE   Device is not a VGA-compatible controller.
++
++**/
++#define IS_PCI_VGA(_p)  IS_CLASS3 (_p, PCI_CLASS_DISPLAY, PCI_CLASS_DISPLAY_VGA, PCI_IF_VGA_VGA)
++//endregion
++
++/**
++  Determine whether a given device path is valid.
++
++  @param  DevicePath  A pointer to a device path data structure.
++  @param  MaxSize     The maximum size of the device path data structure.
++
++  @retval TRUE        DevicePath is valid.
++  @retval FALSE       DevicePath is NULL.
++  @retval FALSE       Maxsize is less than sizeof(EFI_DEVICE_PATH_PROTOCOL).
++  @retval FALSE       The length of any node in the DevicePath is less
++                      than sizeof (EFI_DEVICE_PATH_PROTOCOL).
++  @retval FALSE       If MaxSize is not zero, the size of the DevicePath
++                      exceeds MaxSize.
++  @retval FALSE       If PcdMaximumDevicePathNodeCount is not zero, the node
++                      count of the DevicePath exceeds PcdMaximumDevicePathNodeCount.
++**/
++BOOLEAN
++IsDevicePathValid (
++		CONST EFI_DEVICE_PATH_PROTOCOL *DevicePath,
++		UINTN                    MaxSize
++)
++{
++	UINTN Count;
++	UINTN Size;
++	UINTN NodeLength;
++
++	//
++	//  Validate the input whether exists and its size big enough to touch the first node
++	//
++	if (DevicePath == NULL || (MaxSize > 0 && MaxSize < END_DEVICE_PATH_LENGTH)) {
++		return FALSE;
++	}
++
++	if (MaxSize == 0) {
++		MaxSize = MAX_UINT32;
++	}
++
++	for (Count = 0, Size = 0; !IsDevicePathEnd (DevicePath); DevicePath = NextDevicePathNode (DevicePath)) {
++		NodeLength = DevicePathNodeLength (DevicePath);
++		if (NodeLength < sizeof (EFI_DEVICE_PATH_PROTOCOL)) {
++			return FALSE;
++		}
++
++		if (NodeLength > MAX_UINT32 - Size) {
++			return FALSE;
++		}
++		Size += NodeLength;
++
++		//
++		// Validate next node before touch it.
++		//
++		if (Size > MaxSize - END_DEVICE_PATH_LENGTH ) {
++			return FALSE;
++		}
++
++		Count++;
++		if (Count >= MAX_DEVICE_PATH_NODE_COUNT) {
++			return FALSE;
++		}
++
++	}
++
++	//
++	// Only return TRUE when the End Device Path node is valid.
++	//
++	return (BOOLEAN) (DevicePathNodeLength (DevicePath) == END_DEVICE_PATH_LENGTH);
++}
++
++#if 0
++
++/**
++  Creates a copy of the current device path instance and returns a pointer to the next device path
++  instance.
++
++	This function creates a copy of the current device path instance. It also updates
++  DevicePath to point to the next device path instance in the device path (or NULL
++  if no more) and updates Size to hold the size of the device path instance copy.
++  If DevicePath is NULL, then NULL is returned.
++  If DevicePath points to a invalid device path, then NULL is returned.
++  If there is not enough memory to allocate space for the new device path, then
++  NULL is returned.
++  The memory is allocated from EFI boot services memory. It is the responsibility
++  of the caller to free the memory allocated.
++  If Size is NULL, then ASSERT().
++
++  @param  DevicePath                 On input, this holds the pointer to the current
++                                     device path instance. On output, this holds
++                                     the pointer to the next device path instance
++                                     or NULL if there are no more device path
++                                     instances in the device path pointer to a
++                                     device path data structure.
++  @param  Size                       On output, this holds the size of the device
++                                     path instance, in bytes or zero, if DevicePath
++                                     is NULL.
++
++  @return A pointer to the current device path instance.
++
++**/
++static EFI_DEVICE_PATH_PROTOCOL *
++GetNextDevicePathInstance (
++		EFI_DEVICE_PATH_PROTOCOL    **DevicePath,
++		UINTN                          *Size
++)
++{
++	EFI_DEVICE_PATH_PROTOCOL  *DevPath;
++	EFI_DEVICE_PATH_PROTOCOL  *ReturnValue;
++	UINT8                     Temp;
++
++	ASSERT (Size != NULL);
++
++	if (DevicePath == NULL || *DevicePath == NULL) {
++		*Size = 0;
++		return NULL;
++	}
++
++	if (!IsDevicePathValid (*DevicePath, 0)) {
++		return NULL;
++	}
++
++	//
++	// Find the end of the device path instance
++	//
++	DevPath = *DevicePath;
++	while (!IsDevicePathEndType (DevPath)) {
++		DevPath = NextDevicePathNode (DevPath);
++	}
++
++	//
++	// Compute the size of the device path instance
++	//
++	*Size = ((UINTN) DevPath - (UINTN) (*DevicePath)) + sizeof (EFI_DEVICE_PATH_PROTOCOL);
++
++	//
++	// Make a copy and return the device path instance
++	//
++	Temp              = DevPath->SubType;
++	DevPath->SubType  = END_ENTIRE_DEVICE_PATH_SUBTYPE;
++	ReturnValue       = DuplicateDevicePath (*DevicePath);
++	DevPath->SubType  = Temp;
++
++	//
++	// If DevPath is the end of an entire device path, then another instance
++	// does not follow, so *DevicePath is set to NULL.
++	//
++	if (DevicePathSubType (DevPath) == END_ENTIRE_DEVICE_PATH_SUBTYPE) {
++		*DevicePath = NULL;
++	} else {
++		*DevicePath = NextDevicePathNode (DevPath);
++	}
++
++	return ReturnValue;
++}
++
++#endif
++
++/**
++  This function will connect all current system handles recursively.
++
++  gBS->ConnectController() service is invoked for each handle exist in system handler buffer.
++  If the handle is bus type handler, all childrens also will be connected recursively
++  by gBS->ConnectController().
++
++  @retval EFI_SUCCESS           All handles and it's child handle have been connected
++  @retval EFI_STATUS            Error status returned by of gBS->LocateHandleBuffer().
++
++**/
++EFI_STATUS
++EFIAPI
++BdsLibConnectAllEfi(
++		void
++) {
++	EFI_STATUS Status;
++	UINTN HandleCount;
++	EFI_HANDLE *HandleBuffer;
++	UINTN Index;
++
++	Status = gBS->LocateHandleBuffer(
++			AllHandles,
++			NULL,
++			NULL,
++			&HandleCount,
++			&HandleBuffer
++	);
++	if (EFI_ERROR(Status)) {
++		return Status;
++	}
++
++	for (Index = 0; Index < HandleCount; Index++) {
++		//Status =
++		gBS->ConnectController(HandleBuffer[Index], NULL, NULL, true);
++	}
++
++	if (HandleBuffer != NULL) {
++		FreePool(HandleBuffer);
++	}
++
++	return EFI_SUCCESS;
++}
++
++/**
++  This function will disconnect all current system handles.
++
++  gBS->DisconnectController() is invoked for each handle exists in system handle buffer.
++  If handle is a bus type handle, all childrens also are disconnected recursively by
++  gBS->DisconnectController().
++
++  @retval EFI_SUCCESS           All handles have been disconnected
++  @retval EFI_STATUS            Error status returned by of gBS->LocateHandleBuffer().
++
++**/
++EFI_STATUS
++EFIAPI
++BdsLibDisconnectAllEfi(
++		void
++) {
++	EFI_STATUS Status;
++	UINTN HandleCount;
++	EFI_HANDLE *HandleBuffer;
++	UINTN Index;
++
++	//
++	// Disconnect all
++	//
++	Status = gBS->LocateHandleBuffer(
++			AllHandles,
++			NULL,
++			NULL,
++			&HandleCount,
++			&HandleBuffer
++	);
++	if (EFI_ERROR(Status)) {
++		return Status;
++	}
++
++	for (Index = 0; Index < HandleCount; Index++) {
++		//Status =
++		gBS->DisconnectController(HandleBuffer[Index], NULL, NULL);
++	}
++
++	if (HandleBuffer != NULL) {
++		FreePool(HandleBuffer);
++	}
++
++	return EFI_SUCCESS;
++}
++
++EFI_STATUS ScanDeviceHandles(EFI_HANDLE ControllerHandle,
++														 UINTN *HandleCount,
++														 EFI_HANDLE **HandleBuffer,
++														 UINT32 **HandleType) {
++	EFI_STATUS Status;
++	UINTN HandleIndex;
++	EFI_GUID **ProtocolGuidArray;
++	UINTN ArrayCount;
++	UINTN ProtocolIndex;
++	EFI_OPEN_PROTOCOL_INFORMATION_ENTRY *OpenInfo;
++	UINTN OpenInfoCount;
++	UINTN OpenInfoIndex;
++	UINTN ChildIndex;
++
++	*HandleCount = 0;
++	*HandleBuffer = NULL;
++	*HandleType = NULL;
++
++	//
++	// Retrieve the list of all handles from the handle database
++	//
++	Status = gBS->LocateHandleBuffer(AllHandles, NULL, NULL, HandleCount, HandleBuffer);
++	if (EFI_ERROR(Status)) goto Error;
++
++	*HandleType = AllocatePool(*HandleCount * sizeof(**HandleType));
++	if (*HandleType == NULL) goto Error;
++
++	for (HandleIndex = 0; HandleIndex < *HandleCount; HandleIndex++) {
++		(*HandleType)[HandleIndex] = EFI_HANDLE_TYPE_UNKNOWN;
++		//
++		// Retrieve the list of all the protocols on each handle
++		//
++		Status = gBS->ProtocolsPerHandle(
++				(*HandleBuffer)[HandleIndex],
++				&ProtocolGuidArray,
++				&ArrayCount
++		);
++		if (!EFI_ERROR(Status)) {
++			for (ProtocolIndex = 0; ProtocolIndex < ArrayCount; ProtocolIndex++) {
++
++				if (CompareGuid(ProtocolGuidArray[ProtocolIndex], &gEfiLoadedImageProtocolGuid) == 0) {
++					(*HandleType)[HandleIndex] |= EFI_HANDLE_TYPE_IMAGE_HANDLE;
++				}
++
++				if (CompareGuid(ProtocolGuidArray[ProtocolIndex], &gEfiDriverBindingProtocolGuid) == 0) {
++					(*HandleType)[HandleIndex] |= EFI_HANDLE_TYPE_DRIVER_BINDING_HANDLE;
++				}
++
++//				if (CompareGuid(ProtocolGuidArray[ProtocolIndex], &gEfiDriverConfigurationProtocolGuid) == 0) {
++//					(*HandleType)[HandleIndex] |= EFI_HANDLE_TYPE_DRIVER_CONFIGURATION_HANDLE;
++//				}
++//
++//				if (CompareGuid(ProtocolGuidArray[ProtocolIndex], &gEfiDriverDiagnosticsProtocolGuid) == 0) {
++//					(*HandleType)[HandleIndex] |= EFI_HANDLE_TYPE_DRIVER_DIAGNOSTICS_HANDLE;
++//				}
++
++				if (CompareGuid(ProtocolGuidArray[ProtocolIndex], &gEfiComponentName2ProtocolGuid) == 0) {
++					(*HandleType)[HandleIndex] |= EFI_HANDLE_TYPE_COMPONENT_NAME_HANDLE;
++				}
++
++				if (CompareGuid(ProtocolGuidArray[ProtocolIndex], &gEfiComponentNameProtocolGuid) == 0) {
++					(*HandleType)[HandleIndex] |= EFI_HANDLE_TYPE_COMPONENT_NAME_HANDLE;
++				}
++
++				if (CompareGuid(ProtocolGuidArray[ProtocolIndex], &gEfiDevicePathProtocolGuid) == 0) {
++					(*HandleType)[HandleIndex] |= EFI_HANDLE_TYPE_DEVICE_HANDLE;
++				}
++
++				//
++				// Retrieve the list of agents that have opened each protocol
++				//
++				Status = gBS->OpenProtocolInformation(
++						(*HandleBuffer)[HandleIndex],
++						ProtocolGuidArray[ProtocolIndex],
++						&OpenInfo,
++						&OpenInfoCount
++				);
++				if (!EFI_ERROR(Status)) {
++
++					for (OpenInfoIndex = 0; OpenInfoIndex < OpenInfoCount; OpenInfoIndex++) {
++
++						if (OpenInfo[OpenInfoIndex].ControllerHandle == ControllerHandle) {
++							if ((OpenInfo[OpenInfoIndex].Attributes & EFI_OPEN_PROTOCOL_BY_DRIVER) == EFI_OPEN_PROTOCOL_BY_DRIVER) {
++								for (ChildIndex = 0; ChildIndex < *HandleCount; ChildIndex++) {
++									if ((*HandleBuffer)[ChildIndex] == OpenInfo[OpenInfoIndex].AgentHandle) {
++										(*HandleType)[ChildIndex] |= EFI_HANDLE_TYPE_DEVICE_DRIVER;
++									}
++								}
++							}
++
++							if ((OpenInfo[OpenInfoIndex].Attributes & EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER) ==
++									EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER) {
++								(*HandleType)[HandleIndex] |= EFI_HANDLE_TYPE_PARENT_HANDLE;
++								for (ChildIndex = 0; ChildIndex < *HandleCount; ChildIndex++) {
++									if ((*HandleBuffer)[ChildIndex] == OpenInfo[OpenInfoIndex].AgentHandle) {
++										(*HandleType)[ChildIndex] |= EFI_HANDLE_TYPE_BUS_DRIVER;
++									}
++								}
++							}
++						}
++					}
++
++//MsgLog("ScanDeviceHandles FreePool(OpenInfo)\n");
++					FreePool(OpenInfo);
++//MsgLog("ScanDeviceHandles FreePool(OpenInfo) after\n");
++				}
++			}
++//MsgLog("ScanDeviceHandles FreePool(ProtocolGuidArray)\n");
++
++			FreePool(ProtocolGuidArray);
++//MsgLog("ScanDeviceHandles FreePool(ProtocolGuidArray) after\n");
++		}
++	}
++
++	return EFI_SUCCESS;
++
++	Error:
++	if (*HandleType != NULL) {
++		FreePool(*HandleType);
++	}
++
++	if (*HandleBuffer != NULL) {
++		FreePool(*HandleBuffer);
++	}
++
++	*HandleCount = 0;
++	*HandleBuffer = NULL;
++	*HandleType = NULL;
++
++	return Status;
++}
++
++
++EFI_STATUS BdsLibConnectMostlyAllEfi() {
++	EFI_STATUS Status;
++	UINTN AllHandleCount = 0;
++	EFI_HANDLE *AllHandleBuffer = NULL;
++	UINTN Index;
++	UINTN HandleCount = 0;
++	EFI_HANDLE *HandleBuffer = NULL;
++	UINT32 *HandleType = NULL;
++	UINTN HandleIndex;
++	BOOLEAN Parent;
++	BOOLEAN Device;
++	EFI_PCI_IO_PROTOCOL *PciIo = NULL;
++	PCI_TYPE00 Pci;
++
++	Status = gBS->LocateHandleBuffer(AllHandles, NULL, NULL, &AllHandleCount, &AllHandleBuffer);
++	if (EFI_ERROR(Status))
++		return Status;
++
++	for (Index = 0; Index < AllHandleCount; Index++) {
++		Status = ScanDeviceHandles(AllHandleBuffer[Index], &HandleCount, &HandleBuffer, &HandleType);
++
++		if (EFI_ERROR(Status))
++			goto Done;
++
++		Device = true;
++
++		if (HandleType[Index] & EFI_HANDLE_TYPE_DRIVER_BINDING_HANDLE)
++			Device = false;
++		if (HandleType[Index] & EFI_HANDLE_TYPE_IMAGE_HANDLE)
++			Device = false;
++
++		if (Device) {
++			Parent = false;
++			for (HandleIndex = 0; HandleIndex < HandleCount; HandleIndex++) {
++				if (HandleType[HandleIndex] & EFI_HANDLE_TYPE_PARENT_HANDLE)
++					Parent = true;
++			}
++
++			if (!Parent) {
++				if (HandleType[Index] & EFI_HANDLE_TYPE_DEVICE_HANDLE) {
++					Status = gBS->HandleProtocol(AllHandleBuffer[Index], &gEfiPciIoProtocolGuid, (void **) &PciIo);
++					if (!EFI_ERROR(Status)) {
++						Status = PciIo->Pci.Read(PciIo, EfiPciIoWidthUint32, 0, sizeof(Pci) / sizeof(UINT32), &Pci);
++						if (!EFI_ERROR(Status)) {
++							if (IS_PCI_VGA(&Pci) == true) {
++								gBS->DisconnectController(AllHandleBuffer[Index], NULL, NULL);
++							}
++						}
++					}
++					Status = gBS->ConnectController(AllHandleBuffer[Index], NULL, NULL, true);
++				}
++			}
++		}
++
++		FreePool(HandleBuffer);
++		FreePool(HandleType);
++	}
++
++	Done:
++	FreePool(AllHandleBuffer);
++	return Status;
++}
++
++
++/**
++  Connect the specific Usb device which match the short form device path,
++  and whose bus is determined by Host Controller (Uhci or Ehci).
++
++  @param  HostControllerPI      Uhci (0x00) or Ehci (0x20) or Both uhci and ehci
++                                (0xFF)
++  @param  RemainingDevicePath   a short-form device path that starts with the first
++                                element  being a USB WWID or a USB Class device
++                                path
++
++  @return EFI_INVALID_PARAMETER  RemainingDevicePath is NULL pointer.
++                                 RemainingDevicePath is not a USB device path.
++                                 Invalid HostControllerPI type.
++  @return EFI_SUCCESS            Success to connect USB device
++  @return EFI_NOT_FOUND          Fail to find handle for USB controller to connect.
++
++**/
++EFI_STATUS
++EFIAPI
++BdsLibConnectUsbDevByShortFormDP(
++		IN UINT8 HostControllerPI,
++		IN EFI_DEVICE_PATH_PROTOCOL *RemainingDevicePath
++) {
++	EFI_STATUS Status;
++	EFI_HANDLE *HandleArray;
++	UINTN HandleArrayCount;
++	UINTN Index;
++	EFI_PCI_IO_PROTOCOL *PciIo;
++	UINT8 Class[3];
++	BOOLEAN AtLeastOneConnected;
++
++	//
++	// Check the passed in parameters
++	//
++	if (RemainingDevicePath == NULL) {
++		return EFI_INVALID_PARAMETER;
++	}
++
++	if ((DevicePathType (RemainingDevicePath) != MESSAGING_DEVICE_PATH) ||
++			((DevicePathSubType (RemainingDevicePath) != MSG_USB_CLASS_DP)
++			 && (DevicePathSubType (RemainingDevicePath) != MSG_USB_WWID_DP)
++			)) {
++		return EFI_INVALID_PARAMETER;
++	}
++
++	if (HostControllerPI != 0xFF &&
++			HostControllerPI != 0x00 &&
++			HostControllerPI != 0x10 &&
++			HostControllerPI != 0x20 &&
++			HostControllerPI != 0x30) {
++		return EFI_INVALID_PARAMETER;
++	}
++
++	//
++	// Find the usb host controller firstly, then connect with the remaining device path
++	//
++	AtLeastOneConnected = false;
++	Status = gBS->LocateHandleBuffer(
++			ByProtocol,
++			&gEfiPciIoProtocolGuid,
++			NULL,
++			&HandleArrayCount,
++			&HandleArray
++	);
++	if (!EFI_ERROR(Status)) {
++		for (Index = 0; Index < HandleArrayCount; Index++) {
++			Status = gBS->HandleProtocol(
++					HandleArray[Index],
++					&gEfiPciIoProtocolGuid,
++					(void **) &PciIo
++			);
++			if (!EFI_ERROR(Status)) {
++				//
++				// Check whether the Pci device is the wanted usb host controller
++				//
++				Status = PciIo->Pci.Read(PciIo, EfiPciIoWidthUint8, 0x09, 3, &Class);
++				if (!EFI_ERROR(Status)) {
++					if ((PCI_CLASS_SERIAL == Class[2]) &&
++							(PCI_CLASS_SERIAL_USB == Class[1])) {
++						if (HostControllerPI == Class[0] || HostControllerPI == 0xFF) {
++							Status = gBS->ConnectController(
++									HandleArray[Index],
++									NULL,
++									RemainingDevicePath,
++									false
++							);
++							if (!EFI_ERROR(Status)) {
++								AtLeastOneConnected = true;
++							}
++						}
++					}
++				}
++			}
++		}
++
++		if (HandleArray != NULL) {
++			FreePool(HandleArray);
++		}
++
++		if (AtLeastOneConnected) {
++			return EFI_SUCCESS;
++		}
++	}
++
++	return EFI_NOT_FOUND;
++}
++
++
++/**
++  Connects all drivers to all controllers.
++  This function make sure all the current system driver will manage
++  the corresponding controllers if have. And at the same time, make
++  sure all the system controllers have driver to manage it if have.
++
++**/
++EFI_STATUS EFIAPI BdsLibConnectAllDriversToAllControllers(VOID) {
++	EFI_STATUS efi_status;
++
++//	do {
++//		//
++//		// Connect All EFI 1.10 drivers following EFI 1.10 algorithm
++//		//
++		efi_status = BdsLibConnectAllEfi();
++		if (EFI_ERROR(efi_status)) {
++			perror(L"BdsLibConnectAllEfi failed: %r\n", efi_status);
++		}
++		efi_status = BdsLibConnectMostlyAllEfi();
++		if (EFI_ERROR(efi_status)) {
++			perror(L"BdsLibConnectMostlyAllEfi failed: %r\n", efi_status);
++		}
++//		//
++//		// Check to see if it's possible to dispatch an more DXE drivers.
++//		// The BdsLibConnectAllEfi () may have made new DXE drivers show up.
++//		// If anything is Dispatched Status == EFI_SUCCESS and we will try
++//		// the connect again.
++//		//
++//		Status = gDS->Dispatch();
++//
++//	} while (!EFI_ERROR(Status));
++//
++	return efi_status;
++}
+diff --git a/include/zeron.h b/include/zeron.h
+new file mode 100644
+index 0000000..2c948d7
+--- /dev/null
++++ b/include/zeron.h
+@@ -0,0 +1,10 @@
++#ifndef ZERON_H
++#define ZERON_H
++
++extern EFI_STATUS EFIAPI BdsLibConnectAllDriversToAllControllers(VOID);
++
++extern EFI_STATUS EFIAPI ZeronMain(
++	EFI_HANDLE image_handle
++);
++
++#endif /* ZERON_H */
+\ No newline at end of file
+diff --git a/shim.c b/shim.c
+index 4437898..de7d5d8 100644
+--- a/shim.c
++++ b/shim.c
+@@ -33,6 +33,8 @@
+ 
+ #include <stdint.h>
+ 
++#include "zeron.h"
++
+ #define OID_EKU_MODSIGN "1.3.6.1.4.1.2312.16.1.2"
+ 
+ static EFI_SYSTEM_TABLE *systab;
+@@ -1060,17 +1062,6 @@ EFI_STATUS read_image(EFI_HANDLE image_handle, CHAR16 *ImagePath,
+ 	void *sourcebuffer = NULL;
+ 	UINT64 sourcesize = 0;
+ 
+-	/*
+-	 * We need to refer to the loaded image protocol on the running
+-	 * binary in order to find our path
+-	 */
+-	efi_status = BS->HandleProtocol(image_handle, &EFI_LOADED_IMAGE_GUID,
+-					(void **)&shim_li);
+-	if (EFI_ERROR(efi_status)) {
+-		perror(L"Unable to init protocol\n");
+-		return efi_status;
+-	}
+-
+ 	/*
+ 	 * Build a new path from the existing one plus the executable name
+ 	 */
+@@ -1127,23 +1118,26 @@ EFI_STATUS read_image(EFI_HANDLE image_handle, CHAR16 *ImagePath,
+ 	return efi_status;
+ }
+ 
++
++static EFI_STATUS init_shim_li(EFI_HANDLE image_handle)
++{
++	/*
++	 * We need to refer to the loaded image protocol on the running
++	 * binary in order to find our path
++	 */
++	return BS->HandleProtocol(image_handle, &EFI_LOADED_IMAGE_GUID,
++	                                (void **)&shim_li);
++}
++
+ /*
+  * Load and run an EFI executable
+  */
+-EFI_STATUS start_image(EFI_HANDLE image_handle, CHAR16 *ImagePath)
++EFI_STATUS start_image_ex(EFI_HANDLE image_handle, EFI_HANDLE DeviceHandle, EFI_DEVICE_PATH *FilePath, void *data, int datasize)
+ {
+ 	EFI_STATUS efi_status;
+ 	EFI_IMAGE_ENTRY_POINT entry_point;
+ 	EFI_PHYSICAL_ADDRESS alloc_address;
+ 	UINTN alloc_pages;
+-	CHAR16 *PathName = NULL;
+-	void *data = NULL;
+-	int datasize = 0;
+-
+-	efi_status = read_image(image_handle, ImagePath, &PathName, &data,
+-				&datasize);
+-	if (EFI_ERROR(efi_status))
+-		goto done;
+ 
+ 	/*
+ 	 * We need to modify the loaded image protocol entry before running
+@@ -1154,7 +1148,8 @@ EFI_STATUS start_image(EFI_HANDLE image_handle, CHAR16 *ImagePath)
+ 	/*
+ 	 * Update the loaded image with the second stage loader file path
+ 	 */
+-	shim_li->FilePath = FileDevicePath(NULL, PathName);
++	shim_li->DeviceHandle = DeviceHandle;
++	shim_li->FilePath = FilePath;
+ 	if (!shim_li->FilePath) {
+ 		perror(L"Unable to update loaded image file path\n");
+ 		efi_status = EFI_OUT_OF_RESOURCES;
+@@ -1182,16 +1177,25 @@ EFI_STATUS start_image(EFI_HANDLE image_handle, CHAR16 *ImagePath)
+ 
+ restore:
+ 	restore_loaded_image();
+-done:
+-	if (PathName)
+-		FreePool(PathName);
+-
+-	if (data)
+-		FreePool(data);
+ 
+ 	return efi_status;
+ }
+ 
++/*
++ * Load and run an EFI executable
++ */
++EFI_STATUS start_image(EFI_HANDLE image_handle, CHAR16 *ImagePath) {
++	CHAR16* PathName;
++	void *data;
++	int datasize;
++	EFI_STATUS efi_status = read_image(image_handle, ImagePath, &PathName, &data, &datasize);
++	if (EFI_ERROR(efi_status)) {
++		return efi_status;
++	}
++	EFI_DEVICE_PATH *device_path = FileDevicePath(NULL, PathName);
++	return start_image_ex(image_handle, shim_li->DeviceHandle, device_path, data, datasize);
++}
++
+ /*
+  * Load and run grub. If that fails because grub isn't trusted, load and
+  * run MokManager.
+@@ -1795,10 +1799,22 @@ die:
+ 		msleep(2000000);
+ 	}
+ 
+-	/*
+-	 * Hand over control to the second stage bootloader
+-	 */
+-	efi_status = init_grub(image_handle);
++	efi_status = init_shim_li(image_handle);
++	if (EFI_ERROR(efi_status)) {
++		msg = SHIM_INIT;
++		goto die;
++	}
++
++	efi_status = ZeronMain(image_handle);
++	if (efi_status != EFI_SUCCESS) {
++		console_print(L"No zerox-boot: %d\n", efi_status);
++		msleep(2000000);
++
++		/*
++		 * Hand over control to the second stage bootloader
++		 */
++		efi_status = init_grub(image_handle);
++	}
+ 
+ 	shim_fini();
+ 	devel_egress(EFI_ERROR(efi_status) ? EXIT_FAILURE : EXIT_SUCCESS);
+diff --git a/zeron.c b/zeron.c
+new file mode 100644
+index 0000000..a35d5a2
+--- /dev/null
++++ b/zeron.c
+@@ -0,0 +1,957 @@
++#include "shim.h"
++#include "console.h"
++#include "zeron.h"
++
++#define CONFIG_PARSE_STATE_IDLE 0
++#define CONFIG_PARSE_STATE_KEY 1
++#define CONFIG_PARSE_STATE_VALUE 2
++#define CONFIG_MAX_KEY_SIZE 32
++#define CONFIG_MAX_VALUE_SIZE 128
++
++#define FILE_INFO_SIZE (512 * sizeof(CHAR16))
++#define PATH_BUFFER_SIZE 256
++
++static EFI_GUID ZEROX_GUID = {0x5f031ff4,0xa248,0x4cf9,{0x81, 0x0c, 0xde, 0x28, 0xfe, 0x3b }};
++static CHAR8 NTFSMagic[] = { 'N', 'T', 'F', 'S', ' ', ' ', ' ', ' ' };
++static CHAR8 FAT32Magic[] = { 'M', 'S', 'D', 'O', 'S', '5', '.', '0' };
++
++struct ZERON_CONFIG {
++	CHAR16 chain_load[CONFIG_MAX_VALUE_SIZE];
++	CHAR16 rec_message[CONFIG_MAX_VALUE_SIZE];
++	CHAR16 rec_key[CONFIG_MAX_VALUE_SIZE];
++	CHAR16 rec_efi_volume[CONFIG_MAX_VALUE_SIZE];
++	CHAR16 rec_efi_path[CONFIG_MAX_VALUE_SIZE];
++	CHAR16 onetime_volume[CONFIG_MAX_VALUE_SIZE];
++	CHAR16 onetime_path[CONFIG_MAX_VALUE_SIZE];
++	int onetime_boot;
++	CHAR16 onetime_data[CONFIG_MAX_VALUE_SIZE];
++};
++
++extern EFI_STATUS start_image_ex(EFI_HANDLE image_handle, EFI_HANDLE DeviceHandle, EFI_DEVICE_PATH *FilePath, void *data, int datasize);
++
++static struct ZERON_CONFIG zeron_config;
++static BOOLEAN drivers_initialized = FALSE;
++static EFI_HANDLE ntfs_driver_handle = NULL;
++
++static EFI_STATUS disconnect_blocking_drivers();
++static EFI_STATUS load_ntfs_driver(EFI_HANDLE image_handle, EFI_LOADED_IMAGE *li);
++
++static EFI_STATUS load_image(
++	EFI_HANDLE device,
++	void **data,
++	int *datasize,
++	CHAR16 *PathName // Absolute path
++);
++
++static EFI_STATUS read_local_file(
++	EFI_HANDLE device,
++	IN CHAR16 *ImagePath, // Absolute path
++	void **data,
++	int *datasize
++);
++
++static EFI_STATUS read_config(EFI_LOADED_IMAGE *shim_li);
++static EFI_STATUS check_onetime_boot(EFI_LOADED_IMAGE *li);
++
++static EFI_STATUS wait_for_press_recovery();
++
++static EFI_STATUS store_arguments(INTN argc, CHAR16 **argv);
++static EFI_STATUS boot_to_rec(EFI_HANDLE image_handle, EFI_LOADED_IMAGE *li);
++static EFI_STATUS boot_to_onetime(EFI_HANDLE image_handle, EFI_LOADED_IMAGE *li);
++
++EFI_STATUS store_arguments(INTN argc, CHAR16 **argv) {
++	int i;
++	int total_size = 0;
++	CHAR16 *buffer, *current;
++	EFI_STATUS efi_status;
++
++	if (argc <= 0) {
++		return EFI_SUCCESS;
++	}
++
++	for (i=0; i < argc; i++) {
++		total_size += StrLen(argv[i]) * 2 + 2;
++	}
++
++	buffer = AllocateZeroPool(total_size);
++	if (!buffer) {
++		return EFI_OUT_OF_RESOURCES;
++	}
++
++	current = buffer;
++	for (i=0; i < argc; i++) {
++		StrCpy(current, argv[i]);
++		current += StrLen(argv[i]);
++		*(current++) = 0;
++	}
++
++	efi_status = LibSetVariable(L"ShimArguments", &ZEROX_GUID, total_size, buffer);
++
++	FreePool(buffer);
++
++	return efi_status;
++}
++
++EFI_STATUS EFIAPI ZeronMain(EFI_HANDLE image_handle)
++{
++	EFI_STATUS efi_status;
++	EFI_LOADED_IMAGE *shim_li;
++	INTN argc;
++	CHAR16 **argv;
++
++	argc = GetShellArgcArgv(image_handle, &argv);
++	efi_status = store_arguments(argc, argv);
++	if (EFI_ERROR(efi_status)) {
++		perror(L"Unable to store arguments: %r\n", efi_status);
++	}
++
++	/*
++	 * We need to refer to the loaded image protocol on the running
++	 * binary in order to find our path
++	 */
++	efi_status = BS->HandleProtocol(image_handle, &EFI_LOADED_IMAGE_GUID,
++	                                (void **)&shim_li);
++	if (EFI_ERROR(efi_status)) {
++		perror(L"Unable to init protocol\n");
++		return efi_status;
++	}
++
++	efi_status = read_config(shim_li);
++	if (efi_status != EFI_SUCCESS) {
++		return efi_status;
++	}
++
++	efi_status = check_onetime_boot(shim_li);
++	if (efi_status == EFI_SUCCESS && zeron_config.onetime_boot) {
++		efi_status = boot_to_onetime(image_handle, shim_li);
++		if (efi_status == EFI_SUCCESS) {
++			return efi_status;
++		}
++	}
++
++	if ((StrLen(zeron_config.rec_efi_path) > 0) && (StrLen(zeron_config.rec_key) > 0)) {
++		efi_status = wait_for_press_recovery();
++		if (efi_status == EFI_SUCCESS) {
++			return boot_to_rec(image_handle, shim_li);
++		}
++	}
++
++	return EFI_SUCCESS;
++}
++static CHAR16* GetDriverName(
++	EFI_HANDLE *ImageHandle,
++	CONST EFI_HANDLE DriverHandle
++) {
++	CHAR16 *DriverName;
++	EFI_COMPONENT_NAME_PROTOCOL *ComponentName;
++	EFI_COMPONENT_NAME2_PROTOCOL *ComponentName2;
++
++	// 먼저 EFI_COMPONENT_NAME2 프로토콜 사용
++	if ((gBS->OpenProtocol(DriverHandle, &gEfiComponentName2ProtocolGuid, (VOID**)&ComponentName2, ImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL) == EFI_SUCCESS) &&
++	    (ComponentName2->GetDriverName(ComponentName2, (CHAR8*)"", &DriverName) == EFI_SUCCESS)) {
++		return DriverName;
++	}
++
++	// 작동하지 않는 경우 EFI_COMPONENT_NAME 사용
++	if ((gBS->OpenProtocol(DriverHandle, &gEfiComponentNameProtocolGuid, (VOID**)&ComponentName, ImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL) == EFI_SUCCESS) &&
++	    (ComponentName->GetDriverName(ComponentName, (CHAR8*)"", &DriverName) == EFI_SUCCESS)) {
++		return DriverName;
++	}
++
++	return L"(Unknown driver)";
++}
++
++static EFI_STATUS load_ntfs_driver(EFI_HANDLE image_handle, EFI_LOADED_IMAGE *shim_li) {
++	EFI_STATUS efi_status;
++	EFI_HANDLE driver_handle = NULL;
++	EFI_LOADED_IMAGE_PROTOCOL *loaded_image = NULL;
++	CHAR16* drive_path = L"\\EFI\\ZeronsoftN\\driver" EFI_ARCH "\\ntfs.efi";
++	EFI_DEVICE_PATH *device_path = FileDevicePath(shim_li->DeviceHandle, drive_path);
++	if (device_path == NULL) {
++		perror(L"load_ntfs_driver: '%s' not found\n", drive_path);
++		return EFI_NOT_FOUND;
++	}
++
++	efi_status = gBS->LoadImage(
++		FALSE,
++		image_handle,
++		device_path,
++		NULL,
++		0,
++		&driver_handle
++	);
++	if (EFI_ERROR(efi_status)) {
++		perror(L"load_ntfs_driver: '%s' load failed: %r\n", drive_path, efi_status);
++		return efi_status;
++	}
++
++	efi_status = gBS->OpenProtocol(
++		driver_handle,
++		&gEfiLoadedImageProtocolGuid,
++		(VOID**)&loaded_image,
++		image_handle,
++		NULL,
++		EFI_OPEN_PROTOCOL_GET_PROTOCOL
++	);
++	if (EFI_ERROR(efi_status)){
++		perror(L"Cannot access the driver interface: %r\n", efi_status);
++		return efi_status;
++	}
++
++	if (loaded_image->ImageCodeType != EfiBootServicesCode) {
++		efi_status = EFI_LOAD_ERROR;
++		perror(L"'ntfs.efi' is not a Boot System Driver\n");
++		return efi_status;
++	}
++
++	efi_status = gBS->StartImage(driver_handle, NULL, NULL);
++	if (EFI_ERROR(efi_status)){
++		perror(L"Could not start the ntfs driver : %r\n", efi_status);
++		return efi_status;
++	}
++
++	dprint(L"Start the driver : %s\n", GetDriverName(image_handle, driver_handle));
++
++	ntfs_driver_handle = driver_handle;
++
++	return efi_status;
++}
++
++/*
++ * Some UEFI firmwares (like HPQ EFI from HP notebooks) have DiskIo protocols
++ * opened BY_DRIVER (by Partition driver in HP's case) even when no file system
++ * is produced from this DiskIo. This then blocks our FS driver from connecting
++ * and producing file systems.
++ * To fix it we disconnect drivers that connected to DiskIo BY_DRIVER if this
++ * is a partition volume and if those drivers did not produce file system.
++ *
++ * https://sourceforge.net/p/cloverefiboot/code/3294/tree/rEFIt_UEFI/refit/main.c#l1271
++ */
++static EFI_STATUS disconnect_blocking_drivers(EFI_HANDLE MainImageHandle) {
++	EFI_STATUS Status;
++	UINTN HandleCount = 0, Index, OpenInfoIndex, OpenInfoCount;
++	EFI_HANDLE *Handles = NULL;
++	CHAR16 *DevicePathString;
++	EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *Volume;
++	EFI_BLOCK_IO_PROTOCOL *block_io;
++	EFI_OPEN_PROTOCOL_INFORMATION_ENTRY *OpenInfo;
++
++	// Get all DiskIo handles
++	Status = gBS->LocateHandleBuffer(ByProtocol, &gEfiDiskIoProtocolGuid, NULL, &HandleCount, &Handles);
++	if (EFI_ERROR(Status) || (HandleCount == 0))
++		return Status;
++
++	// Check every DiskIo handle
++	for (Index = 0; Index < HandleCount; Index++) {
++		// If this is not partition - skip it.
++		// This is then whole disk and DiskIo
++		// should be opened here BY_DRIVER by Partition driver
++		// to produce partition volumes.
++		Status = gBS->OpenProtocol(Handles[Index], &gEfiBlockIoProtocolGuid, (VOID**)&block_io,
++		                           MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
++
++		if (EFI_ERROR(Status))
++			continue;
++		if ((block_io->Media == NULL) || (!block_io->Media->LogicalPartition))
++			continue;
++
++		// If SimpleFileSystem is already produced - skip it, this is ok
++		Status = gBS->OpenProtocol(Handles[Index], &gEfiSimpleFileSystemProtocolGuid, (VOID**)&Volume,
++		                           MainImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
++		if (Status == EFI_SUCCESS)
++			continue;
++
++		DevicePathString = DevicePathToStr(DevicePathFromHandle(Handles[Index]));
++
++		// If no SimpleFileSystem on this handle but DiskIo is opened BY_DRIVER
++		// then disconnect this connection
++		Status = gBS->OpenProtocolInformation(Handles[Index], &gEfiDiskIoProtocolGuid, &OpenInfo, &OpenInfoCount);
++		if (EFI_ERROR(Status)) {
++			perror(L"  Could not get DiskIo protocol for %s: %r", DevicePathString, Status);
++			FreePool(DevicePathString);
++			continue;
++		}
++
++		for (OpenInfoIndex = 0; OpenInfoIndex < OpenInfoCount; OpenInfoIndex++) {
++			if ((OpenInfo[OpenInfoIndex].Attributes & EFI_OPEN_PROTOCOL_BY_DRIVER) == EFI_OPEN_PROTOCOL_BY_DRIVER) {
++				Status = gBS->DisconnectController(Handles[Index], OpenInfo[OpenInfoIndex].AgentHandle, NULL);
++				if (EFI_ERROR(Status)) {
++					perror(L"  Could not disconnect '%s' on %s",
++					           GetDriverName(MainImageHandle, OpenInfo[OpenInfoIndex].AgentHandle), DevicePathString);
++				} else {
++					perror(L"  Disconnected '%s' on %s ",
++					             GetDriverName(MainImageHandle, OpenInfo[OpenInfoIndex].AgentHandle), DevicePathString);
++				}
++			}
++		}
++		FreePool(DevicePathString);
++		FreePool(OpenInfo);
++	}
++	FreePool(Handles);
++	return EFI_SUCCESS;
++}
++
++static EFI_STATUS load_drivers(EFI_HANDLE image_handle, EFI_LOADED_IMAGE *li) {
++	EFI_STATUS efi_status;
++
++	if (drivers_initialized) {
++		return EFI_SUCCESS;
++	}
++	drivers_initialized = TRUE;
++
++	efi_status = disconnect_blocking_drivers(image_handle);
++	efi_status = load_ntfs_driver(image_handle, li);
++
++	if (EFI_ERROR(efi_status)) {
++		perror(L"NTFS Driver Load Failed: %r\n", efi_status);
++	}
++
++	return efi_status;
++}
++
++static EFI_STATUS find_volume(EFI_HANDLE image_handle, EFI_HANDLE* found_handle, CHAR16* root_name) {
++	EFI_STATUS efi_status;
++	EFI_HANDLE *handles = NULL;
++	UINTN handle_count = 0;
++	UINT32 buffer_cap = 0;
++	CHAR8* buffer = NULL;
++
++	*found_handle = NULL;
++
++	efi_status = gBS->LocateHandleBuffer(ByProtocol, &gEfiDiskIoProtocolGuid, NULL, &handle_count, &handles);
++	if (EFI_ERROR(efi_status)){
++		perror(L"Failed to list disks : %rx\n", efi_status);
++		return efi_status;
++	}
++
++	dprint(L"handle_count: %d\n", handle_count);
++
++	for(UINTN i = 0; i < handle_count; i++){
++		EFI_BLOCK_IO_PROTOCOL *block_io;
++		EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *volume;
++		BOOLEAN is_fat32;
++		BOOLEAN is_ntfs;
++		EFI_FILE_HANDLE root = NULL;
++		EFI_FILE_HANDLE target_handle = NULL;
++
++		dprint(L"HANDLE[%d]\n", i);
++
++		efi_status = gBS->OpenProtocol(handles[i], &gEfiBlockIoProtocolGuid, (VOID**)&block_io, image_handle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
++		if (EFI_ERROR(efi_status)){
++			perror(L"> OpenProtocol Error : %r\n", efi_status);
++			continue;
++		}
++
++		if (buffer_cap < block_io->Media->BlockSize) {
++			if (buffer) {
++				FreePool(buffer);
++			}
++			buffer = AllocatePool(block_io->Media->BlockSize);
++			if (!buffer) {
++				perror(L"> Allocate(%d) Error\n", block_io->Media->BlockSize);
++				continue;
++			}
++		}
++
++		efi_status = block_io->ReadBlocks(block_io, block_io->Media->MediaId, 0, block_io->Media->BlockSize, buffer);
++		if (EFI_ERROR(efi_status)) {
++			perror(L"> ReadBlock Error %r\n", efi_status);
++			break;
++		}
++
++		is_fat32 = (CompareMem(&buffer[3], FAT32Magic, sizeof(FAT32Magic)) == 0);
++		if (!is_fat32) {
++			is_fat32 |= CompareMem(&buffer[3], "mkdosfs", 8) == 0;
++			is_fat32 |= CompareMem(&buffer[3], "mkfs.fat", 8) == 0;
++		}
++		is_ntfs = (CompareMem(&buffer[3], NTFSMagic, sizeof(NTFSMagic)) == 0);
++
++		if (!is_ntfs && !is_fat32) {
++			dprint(L"> Not NTFS and FAT32\n");
++			continue ;
++		}
++
++		efi_status = gBS->OpenProtocol(
++			handles[i],
++			&gEfiSimpleFileSystemProtocolGuid,
++			(VOID**)&volume,
++			image_handle,
++			NULL,
++			EFI_OPEN_PROTOCOL_TEST_PROTOCOL
++		);
++		if (efi_status == EFI_SUCCESS) {
++			dprint(L"> loaded\n");
++		} else if (efi_status == EFI_UNSUPPORTED && is_ntfs && ntfs_driver_handle) {
++			EFI_HANDLE driver_handle_lists[2] = {
++				ntfs_driver_handle,
++				NULL,
++			};
++			dprint(L"> try connect to ntfs\n");
++
++			efi_status = gBS->ConnectController(handles[i], driver_handle_lists, NULL, TRUE);
++			if (EFI_ERROR(efi_status)) {
++				perror(L"> ConnectController Error: %r\n", efi_status);
++				continue ;
++			}
++		} else {
++			perror(L"> OpenProtocol Error: %r\n", efi_status);
++			continue ;
++		}
++
++		for (INTN retry = 0; retry < 3; retry++) {
++			efi_status = gBS->OpenProtocol(handles[i], &gEfiSimpleFileSystemProtocolGuid, (VOID**)&volume, image_handle, NULL, EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
++			if (!EFI_ERROR(efi_status)) {
++				break;
++			}
++			dprint(L"Waiting 5 seconds before trying again ...");
++			gBS->Stall(5 * 500000); // Microseconds
++		}
++		if (EFI_ERROR(efi_status)) {
++			perror(L"> OpenProtocol Error: %r\n", efi_status);
++			continue ;
++		}
++
++		efi_status = volume->OpenVolume(volume, &root);
++		if (EFI_ERROR(efi_status) || (root == NULL)) {
++			perror(L"> Could not open root directory: %r\n", efi_status);
++			continue;
++		}
++
++		efi_status = root->Open(root, &target_handle, root_name, EFI_FILE_MODE_READ, 0);
++		if (efi_status == EFI_SUCCESS) {
++			root->Close(target_handle);
++			*found_handle = handles[i];
++			break ;
++		}
++	}
++
++	if (buffer) {
++		FreePool(buffer);
++	}
++
++	return efi_status;
++}
++
++static EFI_STATUS boot_to_rec(EFI_HANDLE image_handle, EFI_LOADED_IMAGE *li) {
++	EFI_STATUS efi_status;
++	EFI_HANDLE volume_handle = NULL;
++	void* data;
++	int datasize;
++
++	load_drivers(image_handle, li);
++
++	if (zeron_config.rec_efi_volume[0] != 0) {
++		efi_status = find_volume(image_handle, &volume_handle,
++		                         zeron_config.onetime_volume);
++		if (EFI_ERROR(efi_status)) {
++			perror(L"'%s' not found on any drive: %r\n", zeron_config.onetime_volume, efi_status);
++			return efi_status;
++		}
++	} else {
++		volume_handle = li->DeviceHandle;
++	}
++	EFI_DEVICE_PATH *device_path = FileDevicePath(NULL, zeron_config.rec_efi_path);
++	if (!volume_handle) {
++		volume_handle = li->DeviceHandle;
++	}
++	efi_status = load_image(volume_handle, &data, &datasize, zeron_config.rec_efi_path);
++	if (EFI_ERROR(efi_status)) {
++		return efi_status;
++	}
++	console_print(L"recovery boot to %s\n", zeron_config.rec_efi_path);
++	return start_image_ex(image_handle, volume_handle, device_path, data, datasize);
++}
++
++static EFI_STATUS boot_to_onetime(EFI_HANDLE image_handle, EFI_LOADED_IMAGE *li) {
++	EFI_STATUS efi_status;
++	EFI_HANDLE volume_handle = NULL;
++	void* data;
++	int datasize;
++
++	load_drivers(image_handle, li);
++
++	if (zeron_config.onetime_volume[0] != 0) {
++		efi_status = find_volume(image_handle, &volume_handle,
++		                         zeron_config.onetime_volume);
++		if (EFI_ERROR(efi_status)) {
++			perror(L"'%s' not found on any drive: %r\n", zeron_config.onetime_volume, efi_status);
++			return efi_status;
++		}
++	} else {
++		volume_handle = li->DeviceHandle;
++	}
++	EFI_DEVICE_PATH *device_path = FileDevicePath(NULL, zeron_config.onetime_path);
++	efi_status = load_image(volume_handle, &data, &datasize, zeron_config.onetime_path);
++	if (EFI_ERROR(efi_status)) {
++		return efi_status;
++	}
++	console_print(L"onetime boot to %s (%s)\n", zeron_config.onetime_path, DevicePathToStr(device_path));
++	return start_image_ex(image_handle, volume_handle, device_path, data, datasize);
++}
++
++static UINT16 get_scan_code(IN CHAR16 *function_key)
++{
++	UINT16 scan_code;
++	
++	if (StrCaseCmp(function_key, L"F1") == 0) {
++		scan_code = 0x000B;
++	} else if (StrCaseCmp(function_key, L"F2") == 0) {
++		scan_code = 0x000C;
++	} else if (StrCaseCmp(function_key, L"F3") == 0) {
++		scan_code = 0x000D;
++	} else if (StrCaseCmp(function_key, L"F4") == 0) {
++		scan_code = 0x000E;
++	} else if (StrCaseCmp(function_key, L"F5") == 0) {
++		scan_code = 0x000F;
++	} else if (StrCaseCmp(function_key, L"F6") == 0) {
++		scan_code = 0x0010;
++	} else if (StrCaseCmp(function_key, L"F7") == 0) {
++		scan_code = 0x0011;
++	} else if (StrCaseCmp(function_key, L"F8") == 0) {
++		scan_code = 0x0012;
++	} else if (StrCaseCmp(function_key, L"F9") == 0) {
++		scan_code = 0x0013;
++	} else if (StrCaseCmp(function_key, L"F10") == 0) {
++		scan_code = 0x0014;
++	} else if (StrCaseCmp(function_key, L"F11") == 0) {
++		scan_code = 0x0015;
++	} else if (StrCaseCmp(function_key, L"F12") == 0) {
++		scan_code = 0x0016;
++	} else {
++		scan_code = 0x0015;
++	}
++
++	return scan_code;
++}
++
++static EFI_STATUS wait_for_press_recovery()
++{
++	UINT64 wait_time = 5;
++	UINT16 scan_code = get_scan_code(zeron_config.rec_key);
++	
++	EFI_STATUS efi_status;
++	EFI_EVENT timer_event;
++	EFI_EVENT wait_list[2];
++	EFI_INPUT_KEY key;
++	UINTN wait_index;
++
++	efi_status = gBS->CreateEvent(EVT_TIMER, 0, NULL, NULL, &timer_event);
++	if (EFI_ERROR(efi_status)) {
++		perror(L"CreateEvent Failed: %r\n", efi_status);
++		return efi_status;
++	}
++
++	efi_status = gBS->SetTimer(timer_event, TimerRelative, wait_time * 10000000);
++	if (EFI_ERROR(efi_status)) {
++		perror(L"CreateEvent Failed: %r\n", efi_status);
++		return efi_status;
++	}
++
++	wait_list[0] = gST->ConIn->WaitForKey;
++	wait_list[1] = timer_event;
++
++	console_print(L"%s\n", zeron_config.rec_message);
++
++	do {
++		efi_status = gBS->WaitForEvent(2, wait_list, &wait_index);
++		if (!EFI_ERROR(efi_status) && wait_index == 1) {
++			efi_status = EFI_TIMEOUT;
++			dprint("wait timeout");
++			gBS->CloseEvent(timer_event);
++			break;
++		}
++
++		gST->ConIn->ReadKeyStroke(gST->ConIn, &key);
++		if (key.ScanCode == scan_code) {
++			efi_status = EFI_SUCCESS;
++			dprint("Pressed key : %d\n", key.ScanCode);
++			break;
++		}
++	} while ((efi_status == EFI_TIMEOUT) || (key.ScanCode != scan_code));
++
++	return efi_status;
++}
++
++static EFI_STATUS read_local_file(
++	EFI_HANDLE device,
++	IN CHAR16 *ImagePath,
++	void **data,
++	int *datasize
++) {
++	EFI_STATUS efi_status;
++
++	if (findNetboot(device)) {
++		return EFI_UNSUPPORTED;
++	} else if (find_httpboot(device)) {
++		return EFI_UNSUPPORTED;
++	} else {
++		/*
++		 * Read the new executable off disk
++		 */
++		efi_status = load_image(device, data, datasize, ImagePath);
++		if (EFI_ERROR(efi_status)) {
++			perror(L"Failed to load image %s: %r\n", ImagePath, efi_status);
++			PrintErrors();
++			ClearErrors();
++			return efi_status;
++		}
++	}
++
++	if (*datasize < 0)
++		efi_status = EFI_INVALID_PARAMETER;
++
++	return efi_status;
++}
++
++static EFI_STATUS read_config(
++	EFI_LOADED_IMAGE *shim_li
++)
++{
++	EFI_STATUS status;
++	CHAR16 *config_buf = NULL;
++	int config_size = 0;
++	CHAR16 *config_ptr;
++	CHAR16 *config_end;
++
++	int parse_state = CONFIG_PARSE_STATE_IDLE;
++	int     key_len = 0;
++	CHAR16  key_buf[CONFIG_MAX_KEY_SIZE];
++	int     value_len = 0;
++	CHAR16* value_ref = NULL;
++	CHAR16  value_buf[CONFIG_MAX_VALUE_SIZE];
++
++	SetMem(&zeron_config, sizeof(zeron_config), 0);
++
++	status = read_local_file(shim_li->DeviceHandle, L"\\zerox-boot.cfg", (void**) &config_buf, &config_size);
++	if (status != EFI_SUCCESS) {
++		return status;
++	}
++
++	if (config_size < 1) {
++		return EFI_UNSUPPORTED;
++	}
++
++	config_ptr = config_buf;
++	config_end = config_buf + config_size;
++	if (config_ptr[0] == 0xFEFF) {
++		// UTF-16 BOM
++		config_size--;
++	}
++
++	while (config_ptr < config_end && *config_ptr) {
++		CHAR16 c = *config_ptr;
++
++		switch (parse_state) {
++		case CONFIG_PARSE_STATE_IDLE:
++			if (c == L'#' || c == L' ' || c == L'\t' || c == '\r') {
++				break;
++			}
++			parse_state = CONFIG_PARSE_STATE_KEY;
++			key_len = 0;
++			__attribute__ ((fallthrough));
++		case CONFIG_PARSE_STATE_KEY:
++			if (c == L'=') {
++				// trim
++				while ((key_len > 0) && (value_ref[key_len - 1] == L' ' || value_ref[key_len - 1] == L'\r')) {
++					key_len--;
++				}
++				key_buf[key_len] = 0;
++
++				if (StrCaseCmp(key_buf, L"chain_load") == 0) {
++					value_ref = zeron_config.chain_load;
++				} else if (StrCaseCmp(key_buf, L"rec_message") == 0) {
++					value_ref = zeron_config.rec_message;
++				} else if (StrCaseCmp(key_buf, L"rec_key") == 0) {
++					value_ref = zeron_config.rec_key;
++				} else if (StrCaseCmp(key_buf, L"onetime_data") == 0) {
++					value_ref = zeron_config.onetime_data;
++				} else {
++					// include rec_efi, onetime_efi
++					value_ref = value_buf;
++				}
++				value_len = 0;
++
++				parse_state = CONFIG_PARSE_STATE_VALUE;
++			} else if (key_len < (CONFIG_MAX_KEY_SIZE - 1)) {
++				key_buf[key_len++] = c;
++			}
++
++			// ignore overflow
++			break;
++
++		case CONFIG_PARSE_STATE_VALUE:
++			if (c == L'\n') {
++				BOOLEAN is_rec_efi = StrCaseCmp(key_buf, L"rec_efi") == 0;
++				BOOLEAN is_onetime_efi = StrCaseCmp(key_buf, L"onetime_efi") == 0;
++				CHAR16* volume = NULL;
++				CHAR16* path   = NULL;
++
++				if (value_ref) {
++					// trim
++					while ((value_len > 0) && (value_ref[value_len - 1] == L' ' || value_ref[value_len - 1] == L'\r')) {
++						value_len--;
++					}
++					value_ref[value_len] = 0;
++				}
++
++				if (is_rec_efi) {
++					volume = zeron_config.rec_efi_volume;
++					path = zeron_config.rec_efi_path;
++				} else if (is_onetime_efi) {
++					volume = zeron_config.onetime_volume;
++					path = zeron_config.onetime_path;
++				}
++
++				// Parse volume and path
++				if (is_rec_efi || is_onetime_efi) {
++					int pos = 0;
++					int colon_at = -1;
++					int j;
++					while (value_ref[pos]) {
++						if (value_ref[pos] == L':') {
++							colon_at = pos;
++							break ;
++						}
++						pos++;
++					}
++
++					volume[0] = 0;
++					path[0] = 0;
++					pos = 0;
++					j = 0;
++					if (colon_at >= 0) {
++						volume[j++] = L'\\';
++					}
++					while (value_ref[pos]) {
++						if (pos < colon_at) {
++							volume[j++] = value_ref[pos];
++						} else if (pos == colon_at) {
++							volume[j] = 0;
++							j = 0;
++						} else {
++							path[j++] = value_ref[pos];
++						}
++						pos++;
++					}
++					path[j] = 0;
++				}
++
++				parse_state = CONFIG_PARSE_STATE_IDLE;
++			} else if (value_ref && value_len < (CONFIG_MAX_VALUE_SIZE - 1)) {
++				value_ref[value_len++] = c;
++			}
++
++			// ignore overflow
++			break;
++		}
++
++		config_ptr++;
++	}
++
++	return EFI_SUCCESS;
++}
++
++/*
++ * Read zerox-boot.onetime and remove flag
++ */
++static EFI_STATUS check_onetime_boot(
++	EFI_LOADED_IMAGE *li
++)
++{
++	CHAR16* PathName = L"\\zerox-boot.onetime";
++
++	EFI_STATUS efi_status;
++	EFI_HANDLE device;
++	EFI_FILE_IO_INTERFACE *drive;
++	EFI_FILE *root, *file;
++
++	UINTN buffersize;
++	UINT8 file_buffer[1];
++	BOOLEAN writable = FALSE;
++
++	device = li->DeviceHandle;
++
++	dprint(L"attempting to load %s\n", PathName);
++	/*
++	 * Open the device
++	 */
++	efi_status = BS->HandleProtocol(device, &EFI_SIMPLE_FILE_SYSTEM_GUID,
++	                                (void **) &drive);
++	if (EFI_ERROR(efi_status)) {
++		perror(L"check_onetime_boot: Failed to find fs: %r\n", efi_status);
++		goto error;
++	}
++
++	efi_status = drive->OpenVolume(drive, &root);
++	if (EFI_ERROR(efi_status)) {
++		perror(L"check_onetime_boot: Failed to open fs: %r\n", efi_status);
++		goto error;
++	}
++
++	/*
++	 * And then open the file
++	 */
++	efi_status = root->Open(root, &file, PathName, EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE, 0);
++	if (efi_status == EFI_SUCCESS) {
++		writable = TRUE;
++	} else if (efi_status == EFI_NOT_FOUND) {
++		return efi_status;
++	} else {
++		perror(L"check_onetime_boot: Failed to open with writable %s - %r\n", PathName, efi_status);
++
++		efi_status = root->Open(root, &file, PathName, EFI_FILE_MODE_READ, 0);
++		if (efi_status == EFI_NOT_FOUND) {
++			return efi_status;
++		} else if (efi_status != EFI_SUCCESS) {
++			perror(L"check_onetime_boot: Failed to open %s - %r\n", PathName, efi_status);
++			goto error;
++		}
++	}
++
++	buffersize = sizeof(file_buffer);
++
++	/*
++	 * Perform the actual read
++	 */
++	efi_status = file->Read(file, &buffersize, file_buffer);
++	if (EFI_ERROR(efi_status)) {
++		perror(L"check_onetime_boot: Unexpected return from initial read: %r, buffersize %x\n", efi_status, buffersize);
++		goto error;
++	}
++
++	if (file_buffer[0] == 0x01) {
++		zeron_config.onetime_boot = 1;
++
++		if (writable) {
++			file_buffer[0] = 0x00;
++			efi_status = file->SetPosition(file, 0);
++			if (EFI_ERROR(efi_status)) {
++				perror(L"check_onetime_boot: Unexpected return from SetPosition: %r\n", efi_status);
++				goto error;
++			}
++
++			buffersize = sizeof(file_buffer);
++			efi_status = file->Write(file, &buffersize, file_buffer);
++			if (EFI_ERROR(efi_status)) {
++				perror(L"check_onetime_boot: Unexpected return from Write: %r\n", efi_status);
++				goto error;
++			}
++		}
++	}
++
++	return EFI_SUCCESS;
++
++error:
++	return efi_status;
++}
++
++/*
++ * Open the file and read it into a buffer
++ */
++static EFI_STATUS load_image(
++	EFI_HANDLE device,
++	void **data,
++	int *datasize,
++	CHAR16 *PathName
++) {
++	EFI_STATUS efi_status;
++	EFI_FILE_INFO *fileinfo = NULL;
++	EFI_FILE_IO_INTERFACE *drive;
++	EFI_FILE *root, *file;
++	UINTN buffersize = sizeof(EFI_FILE_INFO);
++
++	dprint(L"attempting to load %s\n", PathName);
++	/*
++	 * Open the device
++	 */
++	efi_status = BS->HandleProtocol(device, &EFI_SIMPLE_FILE_SYSTEM_GUID,
++	                                (void **) &drive);
++	if (EFI_ERROR(efi_status)) {
++		perror(L"load_image: Failed to find fs: %r\n", efi_status);
++		goto error;
++	}
++
++	efi_status = drive->OpenVolume(drive, &root);
++	if (EFI_ERROR(efi_status)) {
++		perror(L"load_image: Failed to open fs: %r\n", efi_status);
++		goto error;
++	}
++
++	/*
++	 * And then open the file
++	 */
++	efi_status = root->Open(root, &file, PathName, EFI_FILE_MODE_READ, 0);
++	if (EFI_ERROR(efi_status)) {
++		perror(L"load_image: Failed to open %s - %r\n", PathName, efi_status);
++		goto error;
++	}
++
++	fileinfo = AllocatePool(buffersize);
++
++	if (!fileinfo) {
++		perror(L"load_image: Unable to allocate file info buffer\n");
++		efi_status = EFI_OUT_OF_RESOURCES;
++		goto error;
++	}
++
++	/*
++	 * Find out how big the file is in order to allocate the storage
++	 * buffer
++	 */
++	efi_status = file->GetInfo(file, &EFI_FILE_INFO_GUID, &buffersize,
++	                           fileinfo);
++	if (efi_status == EFI_BUFFER_TOO_SMALL) {
++		FreePool(fileinfo);
++		fileinfo = AllocatePool(buffersize);
++		if (!fileinfo) {
++			perror(L"load_image: Unable to allocate file info buffer\n");
++			efi_status = EFI_OUT_OF_RESOURCES;
++			goto error;
++		}
++		efi_status = file->GetInfo(file, &EFI_FILE_INFO_GUID,
++		                           &buffersize, fileinfo);
++	}
++
++	if (EFI_ERROR(efi_status)) {
++		perror(L"load_image: Unable to get file info: %r\n", efi_status);
++		goto error;
++	}
++
++	buffersize = fileinfo->FileSize;
++	*data = AllocatePool(buffersize);
++	if (!*data) {
++		perror(L"load_image: Unable to allocate file buffer\n");
++		efi_status = EFI_OUT_OF_RESOURCES;
++		goto error;
++	}
++
++	/*
++	 * Perform the actual read
++	 */
++	efi_status = file->Read(file, &buffersize, *data);
++	if (efi_status == EFI_BUFFER_TOO_SMALL) {
++		FreePool(*data);
++		*data = AllocatePool(buffersize);
++		efi_status = file->Read(file, &buffersize, *data);
++	}
++	if (EFI_ERROR(efi_status)) {
++		perror(L"Unexpected return from initial read: %r, buffersize %x\n",
++		       efi_status, buffersize);
++		goto error;
++	}
++
++	*datasize = buffersize;
++
++	FreePool(fileinfo);
++
++	return EFI_SUCCESS;
++error:
++	if (*data) {
++		FreePool(*data);
++		*data = NULL;
++	}
++
++	if (fileinfo)
++		FreePool(fileinfo);
++	return efi_status;
++}
+-- 
+2.34.1
+
