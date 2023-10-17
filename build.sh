@@ -10,7 +10,7 @@ mkdir -p output review
 
 set -e
 
-build_args=(buildx build --tag shim_build)
+build_args=(buildx build --tag shim_build --no-cache )
 build_args+=(--build-arg SHIM_ARCHIVE_URL=${SHIM_ARCHIVE_URL})
 build_args+=(--build-arg SHIM_ARCHIVE_FILE=${SHIM_ARCHIVE_FILE})
 build_args+=(--build-arg SHIM_ARCHIVE_SHA256=${SHIM_ARCHIVE_SHA256})

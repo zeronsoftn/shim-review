@@ -306,15 +306,9 @@ shim-15.7
 *******************************************************************************
 
 ```
-<<<<<<< HEAD
-f3366e185ee06249cde1c95b04fa734d987cc16606843dd99f8d9b2cf1a4fe5b  shimaa64.efi
-f43610923d846658e1b74e1df8d9c9f1f1295c6a5a0f9d4cb3ae2485c6bbb8a1  shimia32.efi
-8399c9109d658ec81461bd8c68bc1fa9103ca05b261e0b273feb843b55e76fd4  shimx64.efi
-=======
-4f7684174ad593b76284ddde3f947064a3ef602dd6b5f47047ff10a51774fbec  shimaa64.efi
-7797d060d0869d5976eb91a21ab3341bd7a30e1f2c945f5be74a2720470bcc0e  shimia32.efi
-bd455c5c85a0b6063cbd84015f097f63a8a0c8d199e5b9166406b622947be420  shimx64.efi
->>>>>>> b5f133d (fix: sbat and add lockdown patch description)
+3a0ebd4dfb854e8c84e8f0d3205c3b3337ec1f75d9d52f4311ecc33a11f0491f  shimaa64.efi
+e67d09053e37f63954b9fad64d2f05c95d7051edab934c534f0216312b9f95b9  shimia32.efi
+c6d5b80a0f14445a7f489ba6bd6f88837abebf4d7ab4b5aa6a76d1f748721035  shimx64.efi
 ```
 
 *******************************************************************************
