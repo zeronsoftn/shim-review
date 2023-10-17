@@ -242,15 +242,24 @@ We have no shims signed pre-SBAT.
 ### Is upstream commit [eadb2f47a3ced5c64b23b90fd2a3463f63726066 "lockdown: also lock down previous kgdb use"](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=eadb2f47a3ced5c64b23b90fd2a3463f63726066) applied?
 *******************************************************************************
 
-Yes. They are all applied.
+Yes. They are all applied from upstream.
 
-6.1.43: https://github.com/alpinelinux/aports/tree/v3.18.3/main/linux-lts
+6.1.58: https://github.com/zeronsoftn/alpine-pkg-kernel/tree/9283243d5045be9ef362ef4bcfd785bc4ba91ca7
 
 *******************************************************************************
 ### Do you build your signed kernel with additional local patches? What do they do?
 *******************************************************************************
 
 No pacthes.
+
+*******************************************************************************
+### Do you use an ephemeral key for signing kernel modules?
+### If not, please describe how you ensure that one kernel build does not load modules built for another kernel.
+*******************************************************************************
+
+When building the kernel, a ephemeral key is generated and signed.
+
+https://github.com/zeronsoftn/alpine-pkg-kernel/blob/9283243d5045be9ef362ef4bcfd785bc4ba91ca7/lts.x86_64.config#L131
 
 *******************************************************************************
 ### If you use vendor_db functionality of providing multiple certificates and/or hashes please briefly describe your certificate setup.
@@ -291,9 +300,9 @@ shim-15.7
 *******************************************************************************
 
 ```
-8b1acf748a7390afcc8084fb5c6b2561eae8074cc4885db0c3c7f9666c5962a2  shimaa64.efi
-a340c4acba8e5b0b0a6502790ade67289624dca8dd6b165401e08b3da8c47137  shimia32.efi
-c8300ef317ff4bdfe2ca223690062a43ccd350cad4ee65abb3d71349a5d32f63  shimx64.efi
+4f7684174ad593b76284ddde3f947064a3ef602dd6b5f47047ff10a51774fbec  shimaa64.efi
+7797d060d0869d5976eb91a21ab3341bd7a30e1f2c945f5be74a2720470bcc0e  shimia32.efi
+bd455c5c85a0b6063cbd84015f097f63a8a0c8d199e5b9166406b622947be420  shimx64.efi
 ```
 
 *******************************************************************************
@@ -348,8 +357,9 @@ ahci reboot halt minicmd help diskfilter acpi ata blocklist boot cat cmp configf
 ### What is the origin and full version number of your bootloader (GRUB or other)?
 *******************************************************************************
 
-grub-efi-amd64-bin 2.06-13
-https://packages.debian.org/source/bookworm/grub2
+- grub-efi-amd64-bin 2.06-13+deb12u1
+- https://packages.debian.org/source/bookworm/grub2
+- https://ftp.debian.org/debian/pool/main/g/grub-efi-amd64-signed/grub-efi-amd64-signed_1+2.06+13+deb12u1_amd64.deb
 
 *******************************************************************************
 ### If your SHIM launches any other components, please provide further details on what is launched.
@@ -386,12 +396,20 @@ No
 ### What kernel are you using? Which patches does it includes to enforce Secure Boot?
 *******************************************************************************
 
-6.1.43: https://github.com/alpinelinux/aports/tree/v3.18.3/main/linux-lts
+6.1.58: https://github.com/zeronsoftn/alpine-pkg-kernel/tree/9283243d5045be9ef362ef4bcfd785bc4ba91ca7
 
 A lockdown patch has already been applied to this version of Linux.
+Also apply patches from https://salsa.debian.org/kernel-team/linux/-/tree/debian/6.1.55-1/debian/patches/features/all/lockdown:
+- https://github.com/zeronsoftn/alpine-pkg-kernel/blob/9283243d5045be9ef362ef4bcfd785bc4ba91ca7/0004-arm64-add-kernel-config-option-to-lock-down-when.patch
+- https://github.com/zeronsoftn/alpine-pkg-kernel/blob/9283243d5045be9ef362ef4bcfd785bc4ba91ca7/0005-efi-add-an-efi_secure_boot-flag-to-indicate-secure-b.patch
+- https://github.com/zeronsoftn/alpine-pkg-kernel/blob/9283243d5045be9ef362ef4bcfd785bc4ba91ca7/0006-efi-lock-down-the-kernel-if-booted-in-secure-boot-mo.patch
+- https://github.com/zeronsoftn/alpine-pkg-kernel/blob/9283243d5045be9ef362ef4bcfd785bc4ba91ca7/0007-mtd-disable-slram-and-phram-when-locked-down.patch
 
 *******************************************************************************
 ### Add any additional information you think we may need to validate this shim.
 *******************************************************************************
 
 Build: `docker buildx build --no-cache --output=type=tar,dest=output.tar .`
+
+**How do you prevent modules from a kernel build to be loaded by another kernel?**
+
