@@ -30,9 +30,5 @@ jobs:
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
       - uses: actions/upload-artifact@v3
         with:
-          name: output
-          path: output/**
-      - uses: actions/upload-artifact@v3
-        with:
           name: review
           path: review/**

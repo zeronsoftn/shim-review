@@ -188,7 +188,7 @@ See https://techcommunity.microsoft.com/t5/hardware-dev-center/nx-exception-for-
 No. We operate as a recovery solution as below. For compatibility with the user's PC's existing OS, NX-bit is not activated.
 
 ```
-Boot --> ZeronsoftN SHIM --> ZeronsoftN GRUB ----> Existing Bootloader (Other vendor's SHIM/GRUB)
+Boot --> ZeronsoftN SHIM --> ZeronsoftN GRUB ----> Existing Bootloader (Other vendor's Windows/etc... bootx64)
                                              \---> Recovery Linux (ZeronsoftN)
 ```
 
