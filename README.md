@@ -422,7 +422,7 @@ all_video ahci reboot halt minicmd help diskfilter acpi ata blocklist boot cat c
 ### If your SHIM launches any other components, please provide further details on what is launched.
 *******************************************************************************
 
-We use systemd-boot stub to combine kernels and initrds into a single binary.
+None
 
 *******************************************************************************
 ### If your GRUB2 or systemd-boot launches any other binaries that are not the Linux kernel in SecureBoot mode, please provide further details on what is launched and how it enforces Secureboot lockdown.
