@@ -19,6 +19,8 @@ build_args+=(--output type=local,dest=output)
 if [ "${BUILDX_USE_CACHE}" = "y" ]; then
 	build_args+=(--cache-from=type=local,src=/tmp/.buildx-cache)
 	build_args+=(--cache-to=type=local,dest=/tmp/.buildx-cache-new)
+else
+	build_args+=(--no-cache)
 fi
 build_args+=(.)
 

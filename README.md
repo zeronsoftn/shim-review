@@ -176,17 +176,20 @@ SHIM_ARCHIVE_SHA256=87cdeb190e5c7fe441769dde11a1b507ed7328e70a178cd9858c7ac7065c
 ### What patches are being applied and why:
 *******************************************************************************
 
-- Make sbat_var.S parse right with buggy gcc/binutils rhboot/shim#535
-- Enable the NX compatibility flag by default. rhboot/shim#530
-- Don't loop forever in load_certs() with buggy firmware rhboot/shim#547
-- Add validation function for Microsoft signing rhboot/shim#531
+None
 
 *******************************************************************************
 ### Do you have the NX bit set in your shim? If so, is your entire boot stack NX-compatible and what testing have you done to ensure such compatibility?
 
 See https://techcommunity.microsoft.com/t5/hardware-dev-center/nx-exception-for-shim-community/ba-p/3976522 for more details on the signing of shim without NX bit.
 *******************************************************************************
-[your text here]
+
+No. We operate as a recovery solution as below. For compatibility with the user's PC's existing OS, NX-bit is not activated.
+
+```
+Boot --> ZeronsoftN SHIM --> ZeronsoftN GRUB ----> Existing Bootloader (Other vendor's SHIM/GRUB)
+                                             \---> Recovery Linux (ZeronsoftN)
+```
 
 *******************************************************************************
 ### If shim is loading GRUB2 bootloader what exact implementation of Secureboot in GRUB2 do you have? (Either Upstream GRUB2 shim_lock verifier or Downstream RHEL/Fedora/Debian/Canonical-like implementation)
@@ -195,7 +198,7 @@ See https://techcommunity.microsoft.com/t5/hardware-dev-center/nx-exception-for-
 We use debian's implementation of GRUB2 - latest from bookworm
 
 ```
-grub-efi-amd64-bin        2.06-13
+grub-efi-amd64-bin        2.06-13+deb12u1
 ```
 
 *******************************************************************************
@@ -243,6 +246,15 @@ grub-efi-amd64-bin        2.06-13
 
 We used `ubuntu's 2.04-1ubuntu26.1` before.
 Added old shims and grubs to vendor_dbx.
+
+And the sbat of grub to be currently used is number 4.
+
+```bash
+objcopy -j .sbat -O binary /usr/lib/grub/x86_64-efi/monolithic/grubx64.efi /tmp/aa; cat /tmp/aa
+sbat,1,SBAT Version,sbat,1,https://github.com/rhboot/shim/blob/main/SBAT.md
+grub,4,Free Software Foundation,grub,2.06,https://www.gnu.org/software/grub/
+grub.debian,4,Debian,grub2,2.06-13+deb12u1,https://tracker.debian.org/pkg/grub2
+```
 
 *******************************************************************************
 ### If shim is loading GRUB2 bootloader, and if these fixes have been applied, is the upstream global SBAT generation in your GRUB2 binary set to 4?
@@ -323,16 +335,20 @@ See [review/build-log.txt](./review/build-log.txt)
 For example, signing new kernel's variants, UKI, systemd-boot, new certs, new CA, etc..
 *******************************************************************************
 
-shim-15.7
+- no changed CA
+- new certificate
+- new kernel
+- new shim
+- new grub
 
 *******************************************************************************
 ### What is the SHA256 hash of your final SHIM binary?
 *******************************************************************************
 
 ```
-4f7684174ad593b76284ddde3f947064a3ef602dd6b5f47047ff10a51774fbec  shimaa64.efi
-7797d060d0869d5976eb91a21ab3341bd7a30e1f2c945f5be74a2720470bcc0e  shimia32.efi
-bd455c5c85a0b6063cbd84015f097f63a8a0c8d199e5b9166406b622947be420  shimx64.efi
+f6be6f0ab0bfe8896b19785143cc9595b9d8b0f124492537a02034ea3e6a75df  shimaa64.efi
+f903dab7a5a95157f9d68c5d8dddfe835b2fa03d9f63797a4b0c464265662429  shimia32.efi
+6d16b244f8901cdf3c2abc27172390a3e7bf752bbb096c62b12eac4f3917c8f4  shimx64.efi
 ```
 
 *******************************************************************************
@@ -361,22 +377,22 @@ and only append your own. More information on how SBAT works can be found
 SHIM:
 ```
 sbat,1,SBAT Version,sbat,1,https://github.com/rhboot/shim/blob/main/SBAT.md
-shim,3,UEFI shim,shim,1,https://github.com/rhboot/shim
-shim.zeronsoftn,2,ZeronsoftN,shim,15.7-0zeron2,https://github.com/zeronsoftn/shim-release
+shim,4,UEFI shim,shim,1,https://github.com/rhboot/shim
+shim.zeronsoftn,1,ZeronsoftN,shim,15.8-0zeron1,https://github.com/zeronsoftn/shim-release
 ```
 
 GRUB:
 ```
 sbat,1,SBAT Version,sbat,1,https://github.com/rhboot/shim/blob/main/SBAT.md
-grub,3,Free Software Foundation,grub,2.06,https://www.gnu.org/software/grub/
-grub.debian,4,Debian,grub2,2.06-13,https://tracker.debian.org/pkg/grub2
+grub,4,Free Software Foundation,grub,2.06,https://www.gnu.org/software/grub/
+grub.debian,4,Debian,grub2,2.06-13+deb12u1,https://tracker.debian.org/pkg/grub2
 ```
 
 systemd uefi stub:
 ```
 sbat,1,SBAT Version,sbat,1,https://github.com/rhboot/shim/blob/main/SBAT.md
-systemd,1,The systemd Developers,systemd,254,https://systemd.io/
-systemd.zeronsoftn,1,ZeronsoftN,systemd,254-0zeron1,https://github.com/zeronsoftn/
+systemd,1,The systemd Developers,systemd,255,https://systemd.io/
+systemd.zeronsoftn,1,ZeronsoftN,systemd,255-0zeron1,https://github.com/zeronsoftn/
 ```
 
 *******************************************************************************
@@ -384,19 +400,20 @@ systemd.zeronsoftn,1,ZeronsoftN,systemd,254-0zeron1,https://github.com/zeronsoft
 *******************************************************************************
 
 ```
-ahci reboot halt minicmd help diskfilter acpi ata blocklist boot cat cmp configfile cpuid crypto cryptodisk datetime elf echo exfat ext2 fat gptsync halt hashsum iso9660 ldm linux loadenv ls lspci mdraid1x memdisk msdospart normal ntfs ntfscomp ohci part_gpt part_msdos raid5rec random scsi search search_fs_file search_fs_uuid search_label sleep squash4 tar test time true usb usb_keyboard xfs usbms file pgp verifiers gcry_rsa gcry_dsa gcry_sha256 gcry_sha512 regexp
+all_video ahci reboot halt minicmd help diskfilter acpi ata blocklist boot cat cmp configfile cpuid crypto cryptodisk datetime elf echo exfat ext2 fat gptsync halt hashsum iso9660 ldm linux loadenv ls lspci mdraid1x memdisk msdospart normal ntfs ntfscomp ohci part_gpt part_msdos raid5rec random scsi search search_fs_file search_fs_uuid search_label sleep squash4 tar test time true usb usb_keyboard xfs usbms file pgp verifiers gcry_rsa gcry_dsa gcry_sha256 gcry_sha512 regexp zstd luks2 lvm
 ```
 
 *******************************************************************************
 ### If you are using systemd-boot on arm64 or riscv, is the fix for [unverified Devicetree Blob loading](https://github.com/systemd/systemd/security/advisories/GHSA-6m6p-rjcq-334c) included?
 *******************************************************************************
-[your text here]
+
+255 version is patched.
 
 *******************************************************************************
 ### What is the origin and full version number of your bootloader (GRUB2 or systemd-boot or other)?
 *******************************************************************************
 
-- grub-efi-amd64-bin 2.06-13+deb12u1
+- grub-efi-amd64-bin 2.06-13+deb12u1+deb12u1
 - https://packages.debian.org/source/bookworm/grub2
 - https://ftp.debian.org/debian/pool/main/g/grub-efi-amd64-signed/grub-efi-amd64-signed_1+2.06+13+deb12u1_amd64.deb
 
