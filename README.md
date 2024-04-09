@@ -392,8 +392,8 @@ grub.debian,4,Debian,grub2,2.06-13+deb12u1,https://tracker.debian.org/pkg/grub2
 systemd uefi stub:
 ```
 sbat,1,SBAT Version,sbat,1,https://github.com/rhboot/shim/blob/main/SBAT.md
-systemd,1,The systemd Developers,systemd,255,https://systemd.io/
-systemd.zeronsoftn,1,ZeronsoftN,systemd,255-0zeron1,https://github.com/zeronsoftn/
+systemd-boot,1,The systemd Developers,systemd,255,https://systemd.io/
+systemd-boot.zeronsoftn,1,ZeronsoftN,systemd,255-0zeron1,https://github.com/zeronsoftn/shim-release
 ```
 
 *******************************************************************************
