@@ -41,7 +41,7 @@ ZeroCle is a disk sanitize solution, booting into Linux is required for sanitize
 *******************************************************************************
 
 - We use alpine, but alpine does not sign the kernel. So we will achieve trusted boot by signing that kernel.
-- We also generate a single executable grub.efi with the grub-mkstandalone tool with check_signatures enabled to prevent tampering with grub's configuration.
+- We also generate a single executable grub.efi with the grub-mkstandalone tool with built-in grub.cfg.
 - We will also use systemd-boot. (requires a small linux run with minimal efi file) 
 
 *******************************************************************************
@@ -117,6 +117,11 @@ dIOg8cu0jd3QoGdF7pk+wk3Qlv658ftgm0Ua3yBhI9N2TOQ9vjVeHt79l45ThQ70
 ```
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 Comment: User-ID:	hdchoi <hyunduk.choi@gmail.com>
+Comment: Created:	2019-07-03 오후 3:41
+Comment: Expires:	2030-01-26 오후 12:00
+Comment: Type:	2048-bit RSA (secret key available)
+Comment: Usage:	Signing, Certifying User-IDs
+Comment: Fingerprint:	9EB34B7D9C9F81A3E8484EF0229E2B9F84ECE2AC
 
 
 mQENBF0cTgcBCADBwbBoLNHoIpEjv0NCCENgwqG3z0vE4gmlS1nt+dTZfNNFvto/
@@ -125,14 +130,14 @@ aFvYIho0DLjU3r6bqWZ34qbuqLGANx4r1He0swOqRd8qdip6TC3h+f42vXgvWK/E
 8FZwyuPnGlPcNelqmMzSqKWkRRjp2M6McxTblye82YgLUFOc92Xkv8Q3v5A1UbUM
 dgPajQxyawQmRAY/YjTAn8ijG/wXdSNBAprFkqcLrhPTSSusr+VvDQP3UF+x0MyI
 ixD8lx38xnHyZZc45EN1mDu5l5PTQIh7811nABEBAAG0H2hkY2hvaSA8aHl1bmR1
-ay5jaG9pQGdtYWlsLmNvbT6JAVQEEwEIAD4WIQSes0t9nJ+Bo+hITvAiniufhOzi
-rAUCXRxOBwIbAwUJA8OEqQULCQgHAgYVCgkICwIEFgIDAQIeAQIXgAAKCRAiniuf
-hOzirC8EB/0T0ML+mKUMK3+53f3UMgdQ8x7013nj4Xcc6TPK2Cv5d8SFbMh4ammJ
-/xkP0qYjhlwAHkGM4ynt1W0i7aVQ6H5jXKg5sDGF8QEfoxkDcjKsgl++pvREEnwx
-VlvhVbtWsk4X0PhSiICbbva7G0QSFo++m1CfX1ZCeulkRjSe9NEMNuUf593cOjUW
-BM05OQFj9vqmlzqnFFE8fekTEeTwN1VyvCWAL43dXLyVxqlslEsi6qvblU7F9Fy5
-9UeyWgS0BeHq1VQoYfH0rOY6GbLST1flM1GlmjW2T3Le5wBeTgBcXUAMLEGeyVbv
-lrPsqcBoQZPQImEfVAmRXMf9M7gVLCxYuQENBF0cTgcBCADbM/WlMydFoGEZ7VEO
+ay5jaG9pQGdtYWlsLmNvbT6JAVQEEwEIAD4CGwMFCwkIBwIGFQoJCAsCBBYCAwEC
+HgECF4AWIQSes0t9nJ+Bo+hITvAiniufhOzirAUCZlfJIwUJE+CqKQAKCRAiniuf
+hOzirGHIB/wItOoPHBhp9UYGyfEi5o8JkFidaxj3ZTTT2H89kbAV4s6kpj+btjiF
+574NcVjVwlqTyRMaVwyUS8IoMbdLA75+XGdXPtrDQgxC7xE35e4yBo7uSjsmteV5
+oJIylVrTzsRq0zH9CxemWQxAdDvok/PJuuP+s9XOuYV+YtDkRpsoiVA77CilbuCW
+pkBkmL8CBKz4dcdehkrJCV2fGwc6H89Z2bcOJhjYaZsSIhubLxSSQZvX4XH8ss95
+XR8DeaejmVS/RMGly78XzoTWaKB8dHvXd/j1jLc0M30zLtUJavm648uBlvXDANdj
+dZSPQSN+BSx3rvPuhML7jvqjBW+xt5TBuQENBF0cTgcBCADbM/WlMydFoGEZ7VEO
 E00+VahAmvUAN2C5Jc5KcLS5SGGchdM3GQMVGZyCtsOLv/aP6QmHj+I+kjkyLGmd
 3HafPfv+lYIfqH8m68ofnf9XJMm3slU/f8DEiuqHBn14r+ZjUGiGsd4GfDFf8e03
 EqY/y57fLCLSE9GTgbDoHmwToc1POchCYT4Il85GftdvZpKurRZufmZM/5UbDT+y
@@ -145,7 +150,7 @@ JTVrYGr09dj0g8payL/c+OmYfFWW3cDQ/ik1X5CGISLeKoBWT5vdEo+Q3OJ6zXN6
 2vuRBbQB85vGd6cmR1AmhWbN6AzG2XcyfanZFaWXqPr+2sAVOok+6XZk04yqa31u
 gC4+uGxoKZ4YiZEZ9lwDkqmurczJhVhEPaL0o5C5/sgR9t5K8SLhePlZOAjAfQoG
 GKmKdDXD05I0qOeFZTVWkN39QOqp1ZadzGxXD7hMHaV9Wh9vNcgn
-=2En4
+=cS/z
 -----END PGP PUBLIC KEY BLOCK-----
 ```
 
@@ -169,7 +174,8 @@ Make sure that you've verified that your build process uses that file as a sourc
 
 A short guide on verifying public keys and signatures should be available in the [docs](./docs/) directory.
 *******************************************************************************
-Yes
+
+Yes. See [Dockerfile](./Dockerfile)
 
 *******************************************************************************
 ### URL for a repo that contains the exact code which was built to result in your binary:
@@ -192,7 +198,19 @@ SHIM_ARCHIVE_SHA256=a79f0a9b89f3681ab384865b1a46ab3f79d88b11b4ca59aa040ab03fffae
 Mention all the external patches and build process modifications, which are used during your building process, that make your shim binary be the exact one that you posted as part of this application.
 *******************************************************************************
 
-None
+0001-sbat-Add-grub.peimage-2-to-latest-CVE-2024-2312.patch
+- same as https://salsa.debian.org/efi-team/shim/-/blob/master/debian/patches/0001-sbat-Add-grub.peimage-2-to-latest-CVE-2024-2312.patch
+
+0002-sbat-Also-bump-latest-for-grub-4-and-to-todays-date.patch
+- same as https://salsa.debian.org/efi-team/shim/-/blob/master/debian/patches/0002-sbat-Also-bump-latest-for-grub-4-and-to-todays-date.patch
+
+0003-allow-fallback-to-default-loader-when-encountering-errors-on-network-boot.patch
+- same as https://github.com/rhboot/shim/pull/666
+- We boot shim on vPro. We need a fallback in case of http issues.
+
+0004-Discard-load-options-that-start-with-WINDOWS.patch
+- same as https://github.com/rhboot/shim/pull/621
+- We need to replace bootmgfw or add shim with bcdedit . In this case, we will have the same problem as https://github.com/rhboot/shim/pull/626 .
 
 *******************************************************************************
 ### Do you have the NX bit set in your shim? If so, is your entire boot stack NX-compatible and what testing have you done to ensure such compatibility?
@@ -212,10 +230,10 @@ Boot --> ZeronsoftN SHIM --> ZeronsoftN GRUB ----> Existing Bootloader (Other ve
 Skip this, if you're not using GRUB2.
 *******************************************************************************
 
-We use debian's implementation of GRUB2 - latest from bookworm
+We use ubuntu's implementation of GRUB2 - latest from 24.04
 
 ```
-grub-efi-amd64-bin        2.06-13+deb12u1
+grub-efi-amd64-bin        2.12-1ubuntu7
 ```
 
 *******************************************************************************
@@ -262,16 +280,19 @@ grub-efi-amd64-bin        2.06-13+deb12u1
   * CVE-2023-4692
 *******************************************************************************
 
-We used `ubuntu's 2.04-1ubuntu26.1` before.
+We used `ubuntu's 2.12-1ubuntu7` before.
 Added old shims and grubs to vendor_dbx.
 
 And the sbat of grub to be currently used is number 4.
 
+See [helper/show-sbat.sh](./helper/show-sbat.sh)
+
 ```bash
-objcopy -j .sbat -O binary /usr/lib/grub/x86_64-efi/monolithic/grubx64.efi /tmp/aa; cat /tmp/aa
 sbat,1,SBAT Version,sbat,1,https://github.com/rhboot/shim/blob/main/SBAT.md
-grub,4,Free Software Foundation,grub,2.06,https://www.gnu.org/software/grub/
-grub.debian,4,Debian,grub2,2.06-13+deb12u1,https://tracker.debian.org/pkg/grub2
+grub,4,Free Software Foundation,grub,2.12,https://www.gnu.org/software/grub/
+grub.ubuntu,2,Ubuntu,grub2,2.12-1ubuntu7,https://www.ubuntu.com/
+grub.peimage,2,Canonical,grub2,2.12-1ubuntu7,https://salsa.debian.org/grub-team/grub/-/blob/master/debian/patches/secure-boot/efi-use-peimage-shim.patch
+grub.zeronsoftn,1,ZeronsoftN,grub2,2.12-1ubuntu7,https://github.com/zeronsoftn/shim-release
 ```
 
 *******************************************************************************
@@ -290,6 +311,8 @@ If you had no previous signed shim, say so here. Otherwise a simple _yes_ will d
 
 We have no shims signed pre-SBAT.
 
+The previously signed shim was shim-15.8 of the same version.
+
 *******************************************************************************
 ### If your boot chain of trust includes a Linux kernel:
 ### Is upstream commit [1957a85b0032a81e6482ca4aab883643b8dae06e "efi: Restrict efivar_ssdt_load when the kernel is locked down"](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=1957a85b0032a81e6482ca4aab883643b8dae06e) applied?
@@ -301,7 +324,7 @@ If you are shipping an older kernel, double-check your sources; maybe you do not
 
 Yes. They are all applied from upstream.
 
-6.1.58: https://github.com/zeronsoftn/alpine-pkg-kernel/tree/9283243d5045be9ef362ef4bcfd785bc4ba91ca7
+6.6.34: https://github.com/zeronsoftn/alpine-packages/blob/0c8aeeca3ce1680b8e39ac193bdad8e8e5dcd1e8/zeron/linux-lts/APKBUILD
 
 *******************************************************************************
 ### Do you build your signed kernel with additional local patches? What do they do?
@@ -316,13 +339,14 @@ No pacthes.
 
 When building the kernel, a ephemeral key is generated and signed.
 
-https://github.com/zeronsoftn/alpine-pkg-kernel/blob/9283243d5045be9ef362ef4bcfd785bc4ba91ca7/lts.x86_64.config#L131
+https://github.com/zeronsoftn/alpine-packages/blob/0c8aeeca3ce1680b8e39ac193bdad8e8e5dcd1e8/zeron/linux-lts/lts.x86_64.config#L130
 
 *******************************************************************************
 ### Do you use an ephemeral key for signing kernel modules?
 ### If not, please describe how you ensure that one kernel build does not load modules built for another kernel.
 *******************************************************************************
-[your text here]
+
+Yes. Use an ephemeral key.
 
 *******************************************************************************
 ### If you use vendor_db functionality of providing multiple certificates and/or hashes please briefly describe your certificate setup.
@@ -338,7 +362,7 @@ This ensures that your new shim+GRUB2 can no longer chainload those older GRUB2 
 If this is your first application or you're using a new CA certificate, please say so here.
 *******************************************************************************
 
-We issued a new certificate. Also added old shims and grubs to vendor_dbx.
+The current certificate is not used in a vulnerable shim. Also added old(pre-SBAT) shims and grubs to vendor_dbx.
 
 *******************************************************************************
 ### Is the Dockerfile in your repository the recipe for reproducing the building of your shim binary?
@@ -366,7 +390,7 @@ Skip this, if this is your first application for having shim signed.
 *******************************************************************************
 
 - no changed CA
-- new certificate
+- no changed certificate
 - new kernel
 - new shim
 - new grub
@@ -376,9 +400,9 @@ Skip this, if this is your first application for having shim signed.
 *******************************************************************************
 
 ```
-f6be6f0ab0bfe8896b19785143cc9595b9d8b0f124492537a02034ea3e6a75df  shimaa64.efi
-f903dab7a5a95157f9d68c5d8dddfe835b2fa03d9f63797a4b0c464265662429  shimia32.efi
-6d16b244f8901cdf3c2abc27172390a3e7bf752bbb096c62b12eac4f3917c8f4  shimx64.efi
+53456d219f1f7821cdd813476b0fcc16679412ff7f9d4dbd9ae6c339d104baa1  review/shimaa64.efi
+832610401aaefff08b3d14d7e18b8fcb8be241efd5d9537593a16a6dd413c00c  review/shimia32.efi
+422c62edac7b0c5169adf4fa6089ae2c0447edbe777791e39f239ad9a87b9159  review/shimx64.efi
 ```
 
 *******************************************************************************
@@ -412,20 +436,23 @@ SHIM:
 ```
 sbat,1,SBAT Version,sbat,1,https://github.com/rhboot/shim/blob/main/SBAT.md
 shim,4,UEFI shim,shim,1,https://github.com/rhboot/shim
-shim.zeronsoftn,1,ZeronsoftN,shim,15.8-0zeron1,https://github.com/zeronsoftn/shim-release
+shim.zeronsoftn,1,ZeronsoftN,shim,15.8-0zeron2,https://github.com/zeronsoftn/shim-release
 ```
 
 GRUB:
 ```
 sbat,1,SBAT Version,sbat,1,https://github.com/rhboot/shim/blob/main/SBAT.md
-grub,4,Free Software Foundation,grub,2.06,https://www.gnu.org/software/grub/
-grub.debian,4,Debian,grub2,2.06-13+deb12u1,https://tracker.debian.org/pkg/grub2
+grub,4,Free Software Foundation,grub,2.12,https://www.gnu.org/software/grub/
+grub.ubuntu,2,Ubuntu,grub2,2.12-1ubuntu7,https://www.ubuntu.com/
+grub.peimage,2,Canonical,grub2,2.12-1ubuntu7,https://salsa.debian.org/grub-team/grub/-/blob/master/debian/patches/secure-boot/efi-use-peimage-shim.patch
+grub.zeronsoftn,1,ZeronsoftN,grub2,2.12-1ubuntu7,https://github.com/zeronsoftn/shim-release
 ```
 
 systemd uefi stub:
 ```
 sbat,1,SBAT Version,sbat,1,https://github.com/rhboot/shim/blob/main/SBAT.md
-systemd-boot,1,The systemd Developers,systemd,255,https://systemd.io/
+systemd-stub,1,The systemd Developers,systemd,255,https://systemd.io/
+systemd-stub.ubuntu,1,Ubuntu,systemd,255.4-1ubuntu8.2,https://bugs.launchpad.net/ubuntu/
 systemd-boot.zeronsoftn,1,ZeronsoftN,systemd,255-0zeron1,https://github.com/zeronsoftn/shim-release
 ```
 
@@ -450,9 +477,8 @@ all_video ahci reboot halt minicmd help diskfilter acpi ata blocklist boot cat c
 ### What is the origin and full version number of your bootloader (GRUB2 or systemd-boot or other)?
 *******************************************************************************
 
-- grub-efi-amd64-bin 2.06-13+deb12u1+deb12u1
-- https://packages.debian.org/source/bookworm/grub2
-- https://ftp.debian.org/debian/pool/main/g/grub-efi-amd64-signed/grub-efi-amd64-signed_1+2.06+13+deb12u1_amd64.deb
+- grub-efi-amd64-bin 2.12-1ubuntu7
+- https://answers.launchpad.net/ubuntu/noble/amd64/grub-efi/2.12-1ubuntu7
 
 *******************************************************************************
 ### If your shim launches any other components apart from your bootloader, please provide further details on what is launched.
@@ -492,14 +518,14 @@ No
 ### What kernel are you using? Which patches and configuration does it include to enforce Secure Boot?
 *******************************************************************************
 
-6.1.58: https://github.com/zeronsoftn/alpine-pkg-kernel/tree/9283243d5045be9ef362ef4bcfd785bc4ba91ca7
+6.6.34: https://github.com/zeronsoftn/alpine-packages/blob/0c8aeeca3ce1680b8e39ac193bdad8e8e5dcd1e8/zeron/linux-lts/APKBUILD
 
 A lockdown patch has already been applied to this version of Linux.
 Also apply patches from https://salsa.debian.org/kernel-team/linux/-/tree/debian/6.1.55-1/debian/patches/features/all/lockdown:
-- https://github.com/zeronsoftn/alpine-pkg-kernel/blob/9283243d5045be9ef362ef4bcfd785bc4ba91ca7/0004-arm64-add-kernel-config-option-to-lock-down-when.patch
-- https://github.com/zeronsoftn/alpine-pkg-kernel/blob/9283243d5045be9ef362ef4bcfd785bc4ba91ca7/0005-efi-add-an-efi_secure_boot-flag-to-indicate-secure-b.patch
-- https://github.com/zeronsoftn/alpine-pkg-kernel/blob/9283243d5045be9ef362ef4bcfd785bc4ba91ca7/0006-efi-lock-down-the-kernel-if-booted-in-secure-boot-mo.patch
-- https://github.com/zeronsoftn/alpine-pkg-kernel/blob/9283243d5045be9ef362ef4bcfd785bc4ba91ca7/0007-mtd-disable-slram-and-phram-when-locked-down.patch
+- https://github.com/zeronsoftn/alpine-packages/blob/0c8aeeca3ce1680b8e39ac193bdad8e8e5dcd1e8/zeron/linux-lts/0006-arm64-add-kernel-config-option-to-lock-down-when.patch
+- https://github.com/zeronsoftn/alpine-packages/blob/0c8aeeca3ce1680b8e39ac193bdad8e8e5dcd1e8/zeron/linux-lts/0007-efi-add-an-efi_secure_boot-flag-to-indicate-secure-b.patch
+- https://github.com/zeronsoftn/alpine-packages/blob/0c8aeeca3ce1680b8e39ac193bdad8e8e5dcd1e8/zeron/linux-lts/0008-efi-lock-down-the-kernel-if-booted-in-secure-boot-mo.patch
+- https://github.com/zeronsoftn/alpine-packages/blob/0c8aeeca3ce1680b8e39ac193bdad8e8e5dcd1e8/zeron/linux-lts/0009-mtd-disable-slram-and-phram-when-locked-down.patch
 
 
 *******************************************************************************
@@ -510,13 +536,12 @@ A reasonable timeframe of waiting for a review can reach 2-3 months. Helping us 
 
 For newcomers, the applications labeled as [*easy to review*](https://github.com/rhboot/shim-review/issues?q=is%3Aopen+is%3Aissue+label%3A%22easy+to+review%22) are recommended to start the contribution process.
 *******************************************************************************
-[your text here]
+
+- https://github.com/rhboot/shim-review/issues/431
+- https://github.com/rhboot/shim-review/issues/429
 
 *******************************************************************************
 ### Add any additional information you think we may need to validate this shim signing application.
 *******************************************************************************
 
 Build: `docker buildx build --no-cache --output=type=tar,dest=output.tar .`
-
-**How do you prevent modules from a kernel build to be loaded by another kernel?**
-

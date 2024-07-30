@@ -1,0 +1,37 @@
+--- shim-15.8/shim.c	2024-01-23 04:18:05.000000000 +0900
++++ ./bbbb/shim.c	2024-07-30 16:03:45.156575708 +0900
+@@ -1258,9 +1258,14 @@
+ 	}
+ 
+ 	// If the filename is invalid, or the file does not exist,
+-	// just fallback to the default loader.
++	// just fallback to the default loader.  Also fallback to the
++	// default loader if we get a TFTP error or HTTP error.
+ 	if (!use_fb && (efi_status == EFI_INVALID_PARAMETER ||
+-	                efi_status == EFI_NOT_FOUND)) {
++	                efi_status == EFI_NOT_FOUND ||
++					// TODO: Change to EFI_HTTP_ERROR when gnu-efi is updated to a version that includes it
++					// I already get error 35 on my test systems, even with this build of shim.
++	                efi_status == EFIERR(35) ||
++	                efi_status == EFI_TFTP_ERROR)) {
+ 		console_print(
+ 			L"start_image() returned %r, falling back to default loader\n",
+ 			efi_status);
+@@ -1672,7 +1677,7 @@
+ 		 * do a pass of loading revocations before we try to add
+ 		 * anything new to our allowlist. This is done by making two
+ 		 * passes over the directory, first to search for the
+-		 * revocations.efi file then to search for shim_certificate.efi
++		 * revocations.efi file then to search for shim_certificate*.efi
+ 		 */
+ 		if (search_revocations &&
+ 		    StrCaseCmp(info->FileName, REVOCATIONFILE) == 0) {
+@@ -1688,7 +1693,7 @@
+ 		}
+ 
+ 		if (!search_revocations &&
+-		    StrCaseCmp(info->FileName, L"shim_certificate.efi") == 0) {
++		    StrnCaseCmp(info->FileName, L"shim_certificate", 16) == 0) {
+ 			load_cert_file(image_handle, info->FileName, PathName);
+ 		}
+ 	}

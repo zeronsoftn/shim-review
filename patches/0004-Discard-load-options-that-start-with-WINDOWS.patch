@@ -1,0 +1,41 @@
+From ef59ebb6569d49e02189f991add2192552777c75 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Lauri=20Kentt=C3=A4?= <lauri.kentta@gmail.com>
+Date: Sat, 2 Dec 2023 20:27:07 +0200
+Subject: [PATCH] Discard load-options that start with WINDOWS
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Windows bcdedit.exe creates boot entries where load options
+begin with "WINDOWS\0" (in 8-bit chars), followed by some
+Windows-specific data which is useless for shim. This data
+causes shim error "Failed to open \EFI\mypath\䥗䑎坏S".
+
+Resolves: #370
+Signed-off-by: Lauri Kenttä <lauri.kentta@gmail.com>
+---
+ load-options.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/load-options.c b/load-options.c
+index a8c6e1a..c414826 100644
+--- a/load-options.c
++++ b/load-options.c
+@@ -442,6 +442,14 @@ parse_load_options(EFI_LOADED_IMAGE *li)
+ 		}
+ 	}
+ 
++	/*
++	 * Windows bcdedit.exe puts "WINDOWS\0" (in 8-bit) in the beginning of
++	 * the options, so if we see that, we know it's not useful to us.
++	 */
++	if (li->LoadOptionsSize >= 8)
++		if (CompareMem(li->LoadOptions, "WINDOWS", 8) == 0)
++			return EFI_SUCCESS;
++
+ 	loader_str = split_load_options(li->LoadOptions, li->LoadOptionsSize,
+ 					&remaining, &remaining_size);
+ 
+-- 
+2.34.1
+
