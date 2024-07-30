@@ -400,9 +400,9 @@ Skip this, if this is your first application for having shim signed.
 *******************************************************************************
 
 ```
-53456d219f1f7821cdd813476b0fcc16679412ff7f9d4dbd9ae6c339d104baa1  review/shimaa64.efi
-832610401aaefff08b3d14d7e18b8fcb8be241efd5d9537593a16a6dd413c00c  review/shimia32.efi
-422c62edac7b0c5169adf4fa6089ae2c0447edbe777791e39f239ad9a87b9159  review/shimx64.efi
+43989d3a59ff074ec9013cc000797f2139cf9fa24b30f38fee415d4daa0a41c0  shimaa64.efi
+6c0c1b656c382823c9fe37110f0bf484783aa55db380664437654020fa33150b  shimia32.efi
+6d47d6e3949084b7a93c4c9332ced82ad58e985ff6431e172af12072ab3d5490  shimx64.efi
 ```
 
 *******************************************************************************
