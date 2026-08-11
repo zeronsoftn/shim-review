@@ -385,9 +385,17 @@ https://github.com/zeronsoftn/alpine-packages/blob/67485318457a4bce8efca6788476b
 ### Do you build your signed kernel with additional local patches? What do they do?
 *******************************************************************************
 
-When building the kernel, a ephemeral key is generated and signed.
+https://github.com/zeronsoftn/alpine-packages/tree/67485318457a4bce8efca6788476b8df7f74fad4/zeron/linux-lts
 
-https://github.com/zeronsoftn/alpine-packages/blob/67485318457a4bce8efca6788476b8df7f74fad4/zeron/linux-lts/lts.x86_64.config#L131
+Only Alpine's upstream patches have been applied.
+
+- 0001-powerpc-boot-wrapper-Add-z-notext-flag-for-ppc64le.patch
+- 0001-x86-CPU-AMD-avoid-printing-reset-reasons-on-Xen-domU.patch
+- 0002-x86-Compress-vmlinux-with-zstd-19-instead-of-22.patch
+- 0003-kexec-add-kexec_load_disabled-boot-option.patch
+- 0004-objtool-respect-AWK-setting.patch
+Kernel 6.12.48 (#1)
+- 0005-powerpc-config-defang-gcc-check-for-stack-protector-.patch
 
 *******************************************************************************
 ### Do you use an ephemeral key for signing kernel modules?
@@ -395,7 +403,7 @@ https://github.com/zeronsoftn/alpine-packages/blob/67485318457a4bce8efca6788476b
 *******************************************************************************
 Yes. An ephemeral key is generated at kernel build time and used to sign the modules.
 
-Yes. Used an ephemeral key.
+https://github.com/zeronsoftn/alpine-packages/blob/67485318457a4bce8efca6788476b8df7f74fad4/zeron/linux-lts/lts.x86_64.config#L131
 
 *******************************************************************************
 ### If you use vendor_db functionality of providing multiple certificates and/or hashes please briefly describe your certificate setup.
@@ -450,6 +458,13 @@ Hint: Prefer using *frozen* packages for your toolchain, since an update to GCC,
 If your shim binaries can't be reproduced using the provided Dockerfile, please explain why that's the case, what the differences would be and what build environment (OS and toolchain) is being used to reproduce this build? In this case please write a detailed guide, how to setup this build environment from scratch.
 *******************************************************************************
 Yes. See [Dockerfile](./Dockerfile)
+
+
+```sh 
+$ docker buildx build --no-cache --output=type=tar,dest=output.tar .
+$ tar -xf output.tar
+$ sha256sum shim*.efi
+```
 
 *******************************************************************************
 ### Which files in this repo are the logs for your build?
@@ -617,4 +632,4 @@ For newcomers, the applications labeled as [*easy to review*](https://github.com
 *******************************************************************************
 ### Add any additional information you think we may need to validate this shim signing application.
 *******************************************************************************
-Build: `docker buildx build --no-cache --output=type=tar,dest=output.tar .`
+
